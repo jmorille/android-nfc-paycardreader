@@ -1,7 +1,10 @@
 package net.skora.eccardinfos;
 
+import java.io.IOException;
+
 public class SharedUtils {
-    static protected String formatBCDAmount(byte[] amount) {
+
+    public static   String formatBCDAmount(byte[] amount) {
 		StringBuilder res = new StringBuilder(); 
 		if (amount[0] != 0) res.append(Integer.toHexString(amount[0] >= 0 ? amount[0] : 256 + amount[0]));
 		if (amount[1] == 0) {
@@ -23,8 +26,8 @@ public class SharedUtils {
 		res.append("€");
 		return res.toString();
     }
-    
-    static protected String parseLogState(byte logstate) {
+
+    public static   String parseLogState(byte logstate) {
 		switch (logstate & 0x60 >> 5) {
 		case 0: return new String("Laden"); // chargé
 		case 1: return new String("Entladen"); // déchargé
@@ -34,11 +37,11 @@ public class SharedUtils {
 		return new String("");
     }
 
-	static protected String Byte2Hex(byte[] input) {
-		return Byte2Hex(input, " ");
+	public static  String byte2Hex(byte[] input) {
+		return byte2Hex(input, " ");
 	}
 
-	static protected String Byte2Hex(byte[] input, String space) {
+    public static  String byte2Hex(byte[] input, String space) {
 		StringBuilder result = new StringBuilder();
 		
 		for (Byte inputbyte : input) {
@@ -46,4 +49,13 @@ public class SharedUtils {
 		}
 		return result.toString();
 	}
+
+    public static byte[] hex2Byte(String hexstr)  {
+        String[] hexbytes = hexstr.split("\\s");
+        byte[] bytes = new byte[hexbytes.length];
+        for (int i = 0; i < hexbytes.length; i++) {
+            bytes[i] = (byte) Integer.parseInt(hexbytes[i], 16);
+        }
+        return bytes;
+    }
 }
