@@ -26,10 +26,10 @@ public class SharedUtils {
     
     static protected String parseLogState(byte logstate) {
 		switch (logstate & 0x60 >> 5) {
-		case 0: return new String("Laden");
-		case 1: return new String("Entladen");
-		case 2: return new String("Abbuchen");
-		case 3: return new String("Rückbuchen");
+		case 0: return new String("Laden"); // chargé
+		case 1: return new String("Entladen"); // déchargé
+		case 2: return new String("Abbuchen"); //débit
+		case 3: return new String("Rückbuchen"); // Backposting
 		}
 		return new String("");
     }

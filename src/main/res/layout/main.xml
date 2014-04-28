@@ -63,7 +63,7 @@
             android:layout_height="wrap_content" >
 
             <TextView
-                android:id="@+id/ui_betrag"
+                android:id="@+id/ui_amount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingRight="10dp"
@@ -71,7 +71,7 @@
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <TextView
-                android:id="@+id/display_betrag"
+                android:id="@+id/display_amount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="" />
@@ -83,7 +83,7 @@
             android:layout_height="wrap_content" >
 
             <TextView
-                android:id="@+id/ui_kartennr"
+                android:id="@+id/ui_cardnumber"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingRight="10dp"
@@ -91,7 +91,7 @@
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <TextView
-                android:id="@+id/display_kartennr"
+                android:id="@+id/display_cardnumber"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="" />
@@ -103,7 +103,7 @@
             android:layout_height="wrap_content" >
 
             <TextView
-                android:id="@+id/ui_aktiviert"
+                android:id="@+id/ui_activation"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingRight="10dp"
@@ -111,7 +111,7 @@
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <TextView
-                android:id="@+id/display_aktiviert"
+                android:id="@+id/display_activation"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="" />
@@ -123,15 +123,15 @@
             android:layout_height="wrap_content" >
 
             <TextView
-                android:id="@+id/ui_verfall"
+                android:id="@+id/ui_expiration"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingRight="10dp"
-                android:text="@string/ui_verfall"
+                android:text="@string/ui_expiration"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <TextView
-                android:id="@+id/display_verfall"
+                android:id="@+id/display_expiration"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="" />
@@ -176,7 +176,7 @@
             android:layout_height="wrap_content" >
 
             <TextView
-                android:id="@+id/ui_konto"
+                android:id="@+id/ui_account"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingRight="10dp"
@@ -184,7 +184,7 @@
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <TextView
-                android:id="@+id/display_konto"
+                android:id="@+id/display_account"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
         </TableRow>

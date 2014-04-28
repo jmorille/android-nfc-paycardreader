@@ -53,12 +53,12 @@ public class ECCardInfosActivity extends Activity {
 	private TextView nfcid;
 	private TextView cardtype;
 	private TextView blz;
-	private TextView konto;
-	private TextView betrag;
-	private TextView kartennr;
+	private TextView accountTextView;
+	private TextView amountTextView;
+	private TextView cardNumberTextView;
 	private TextView kknr;
-	private TextView aktiviert;
-	private TextView verfall;
+	private TextView activatedText;
+	private TextView expirationTextView;
 	private TableLayout aidtable;
 	private Button transactions;
 	
@@ -71,12 +71,12 @@ public class ECCardInfosActivity extends Activity {
 		nfcid = (TextView) findViewById(R.id.display_nfcid);
 		cardtype = (TextView) findViewById(R.id.display_cardtype);
 		blz = (TextView) findViewById(R.id.display_blz);
-		konto = (TextView) findViewById(R.id.display_konto);
-		betrag = (TextView) findViewById(R.id.display_betrag);
-		kartennr = (TextView) findViewById(R.id.display_kartennr);
+		accountTextView = (TextView) findViewById(R.id.display_account);
+		amountTextView = (TextView) findViewById(R.id.display_amount);
+		cardNumberTextView = (TextView) findViewById(R.id.display_cardnumber);
 		kknr = (TextView) findViewById(R.id.display_kknr);
-		aktiviert = (TextView) findViewById(R.id.display_aktiviert);
-		verfall = (TextView) findViewById(R.id.display_verfall);
+		activatedText = (TextView) findViewById(R.id.display_activation);
+		expirationTextView = (TextView) findViewById(R.id.display_expiration);
 		aidtable = (TableLayout) findViewById(R.id.table_features);
 		transactions = (Button) findViewById(R.id.button_transactions);
 		
@@ -109,12 +109,12 @@ public class ECCardInfosActivity extends Activity {
 		nfcid.setText("-");
 		cardtype.setText("-");
 		blz.setText("-");
-		konto.setText("-");
-		betrag.setText("-");
-		kartennr.setText("-");
+		accountTextView.setText("-");
+		amountTextView.setText("-");
+		cardNumberTextView.setText("-");
 		kknr.setText("-");
-		aktiviert.setText("-");
-		verfall.setText("-");
+		activatedText.setText("-");
+		expirationTextView.setText("-");
 		aidtable.removeAllViews();
 		transactions.setVisibility(View.GONE);
 		
@@ -142,30 +142,30 @@ public class ECCardInfosActivity extends Activity {
 				return;
 			} else 	if (new String(transceive("00 A4 04 0C 07 A0 00 00 00 04 10 10"), "ISO-8859-1").contains("MasterCard")) {	// MasterCard
 				cardtype.setText("MasterCard");
-				readKreditkarte();
+				readCreditCard();
 				
 				// Now following: AIDs I never tried until now - perhaps they work, possibly not
 			} else if (new String(transceive("00 A4 04 0C 07 A0 00 00 00 03 10 10"), "ISO-8859-1").length() > 2) {
 				cardtype.setText("Visa");
-				readKreditkarte();
+				readCreditCard();
 			} else if (new String(transceive("00 A4 04 0C 07 A0 00 00 00 04 99 99"), "ISO-8859-1").length() > 2) {
 				cardtype.setText("MasterCard");
-				readKreditkarte();
+				readCreditCard();
 			} else if (new String(transceive("00 A4 04 0C 07 A0 00 00 00 04 30 60"), "ISO-8859-1").length() > 2) {;
 				cardtype.setText("Maestro");
-				readKreditkarte();
+				readCreditCard();
 			} else if (new String(transceive("00 A4 04 0C 07 A0 00 00 00 04 60 00"), "ISO-8859-1").length() > 2) {
 				cardtype.setText("Cirrus");
-				readKreditkarte();
+				readCreditCard();
 			} else if (new String(transceive("00 A4 04 0C 07 A0 00 00 00 03 20 10"), "ISO-8859-1").length() > 2) {
 				cardtype.setText("Visa Electron");
-				readKreditkarte();
+				readCreditCard();
 			} else if (new String(transceive("00 A4 04 0C 07 A0 00 00 00 03 20 20"), "ISO-8859-1").length() > 2) {
 				cardtype.setText("Visa V Pay");
-				readKreditkarte();
+				readCreditCard();
 			} else if (new String(transceive("00 A4 04 0C 07 A0 00 00 00 03 80 10"), "ISO-8859-1").length() > 2) {
 				cardtype.setText("Visa V Pay");
-				readKreditkarte();
+				readCreditCard();
 			} else {
 				toastError(getResources().getText(R.string.error_card_unknown));
 			}
@@ -180,23 +180,23 @@ public class ECCardInfosActivity extends Activity {
 		try  {
 			// Read EF_BETRAG
 			byte[] recv = transceive("00 B2 01 C4 00");
-			betrag.setText(SharedUtils.formatBCDAmount(recv));
+			amountTextView.setText(SharedUtils.formatBCDAmount(recv));
 
 			// Read EF_ID
 			recv = transceive("00 B2 01 BC 00");
 			// Kartennr.
-			kartennr.setText(SharedUtils.Byte2Hex(Arrays.copyOfRange(recv, 4, 9)).replace(" ", ""));
+			cardNumberTextView.setText(SharedUtils.Byte2Hex(Arrays.copyOfRange(recv, 4, 9)).replace(" ", ""));
 			//Aktiviert am
-			aktiviert.setText(SharedUtils.Byte2Hex(Arrays.copyOfRange(recv, 14, 15)).replace(" ", "") + "." + SharedUtils.Byte2Hex(Arrays.copyOfRange(recv, 13, 14)).replace(" ", "") + ".20" + SharedUtils.Byte2Hex(Arrays.copyOfRange(recv, 12, 13)).replace(" ", ""));
+			activatedText.setText(SharedUtils.Byte2Hex(Arrays.copyOfRange(recv, 14, 15)).replace(" ", "") + "." + SharedUtils.Byte2Hex(Arrays.copyOfRange(recv, 13, 14)).replace(" ", "") + ".20" + SharedUtils.Byte2Hex(Arrays.copyOfRange(recv, 12, 13)).replace(" ", ""));
 			//Verfällt am
-			verfall.setText(SharedUtils.Byte2Hex(Arrays.copyOfRange(recv, 11, 12)).replace(" ", "") + "/" + SharedUtils.Byte2Hex(Arrays.copyOfRange(recv, 10, 11)).replace(" ", ""));
+			expirationTextView.setText(SharedUtils.Byte2Hex(Arrays.copyOfRange(recv, 11, 12)).replace(" ", "") + "/" + SharedUtils.Byte2Hex(Arrays.copyOfRange(recv, 10, 11)).replace(" ", ""));
 
 			// EF_BÖRSE
 			recv = transceive("00 B2 01 CC 00");
 			// BLZ
 			blz.setText(SharedUtils.Byte2Hex(Arrays.copyOfRange(recv, 1, 5)).replace(" ", ""));
 			// Kontonr.
-			konto.setText(SharedUtils.Byte2Hex(Arrays.copyOfRange(recv, 5, 10)).replace(" ", ""));
+			accountTextView.setText(SharedUtils.Byte2Hex(Arrays.copyOfRange(recv, 5, 10)).replace(" ", ""));
 
 			transactions.setVisibility(View.VISIBLE);
 
@@ -216,15 +216,15 @@ public class ECCardInfosActivity extends Activity {
 		}
 	}
 	
-	private void readKreditkarte() {
+	private void readCreditCard() {
 		try {
 			byte[] recv = transceive("00 B2 01 0C 00");
 			kknr.setText(new String(Arrays.copyOfRange(recv, 29, 45), "ISO-8859-1"));
-			verfall.setText(
-					new String(Arrays.copyOfRange(recv, 75, 77), "ISO-8859-1")
-					.concat("/")
-					.concat(new String(Arrays.copyOfRange(recv, 73, 75), "ISO-8859-1"))
-					);
+			expirationTextView.setText(
+                    new String(Arrays.copyOfRange(recv, 75, 77), "ISO-8859-1")
+                            .concat("/")
+                            .concat(new String(Arrays.copyOfRange(recv, 73, 75), "ISO-8859-1"))
+            );
 		} catch (IOException e) {
 			toastError(getResources().getText(R.string.error_nfc_comm_cont) + (e.getMessage() != null ? e.getMessage() : "-"));
 		}
