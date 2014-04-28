@@ -33,11 +33,8 @@ public class Err {
 
     @Override
     public String toString() {
-        return "Err{" +
-                "sw1='" + sw1 + '\'' +
-                ", sw2='" + sw2 + '\'' +
-                ", type='" + type + '\'' +
-                ", desc='" + desc + '\'' +
-                '}';
+        return "Err{" +  sw1 + " " + sw2 +
+                " = (" + type + ')' +
+                " " + desc +  '}';
     }
 }

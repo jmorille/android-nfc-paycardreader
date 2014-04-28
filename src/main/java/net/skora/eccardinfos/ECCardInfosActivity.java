@@ -306,13 +306,14 @@ public class ECCardInfosActivity extends Activity {
         log("Send: " + SharedUtils.byte2Hex(bytes));
         byte[] recv = tagcomm.transceive(bytes);
         // --> error list http://www.eftlab.co.uk/index.php/site-map/knowledge-base/118-apdu-response-list
-        log("Received: " + SharedUtils.byte2Hex(recv));
         // Parse Error
         ArrayList<Err> errors =  Errors.getError(recv);
         if (!errors.isEmpty()) {
             for (Err err : errors) {
                 log("Received: " + SharedUtils.byte2Hex(recv) + " ==> " + err);
             }
+        } else {
+            log("Received: " + SharedUtils.byte2Hex(recv));
         }
         return recv;
     }
