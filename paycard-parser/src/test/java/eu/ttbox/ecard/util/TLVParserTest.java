@@ -7,6 +7,7 @@ import com.jaccal.util.TLV;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.HashMap;
  import org.junit.Assert;
 
@@ -29,11 +30,12 @@ public class TLVParserTest {
         HashMap<ByteBuffer, byte[]> parseTwo= TLVParser.parseTVL(valOne);
         ByteBuffer keyTwo = ByteBuffer.wrap(new byte[]{(byte)0x84});
         byte[] valTow = parseTwo.get(keyTwo);
-        System.out.println(  "===> Key " + NumUtil.hex2String(keyTwo.array()) + " : " +  NumUtil.toHexString(valTow));
+        System.out.println("===> Key " + NumUtil.hex2String(keyTwo.array()) + " : " + NumUtil.toHexString(valTow));
         Assert.assertTrue(parseTwo.containsKey(keyTwo));
         Assert.assertEquals(14, valTow.length);
      }
-    @Test
+
+   // @Test
     public void testParse2() {
         byte[] recv = ByteHelper.hex2Byte("84 0E 31 50 41 59 2E 53 59 53 2E 44 44 46 30 31 A5 0C 88 01 01 5F 2D 02 66 72 9F 11 01 01");
         HashMap<ByteBuffer, byte[]> parseOne = TLVParser.parseTVL(recv);
@@ -60,16 +62,22 @@ public class TLVParserTest {
             System.out.println(  "===> Map Key " + NumUtil.hex2String(key.array()) + " : " +  NumUtil.toHexString(parseOne.get(key)));
         }
     }
-
     @Test
-    public void testKey() {
-//        byte testByte = 0x5f;
-        byte testByte = 0x5f;
-        if ((testByte & 0x1F) == 0x1F) {
-           System.out.println("test 0x1F  ---");
-        } else {
+    public void testParseReadRecord() {
+        byte[] recv = ByteHelper.hex2Byte("70 23 61 21 4F 07 A0 00 00 00 42 10 10 50 02 43 42 9F 12 0E 54 52 41 4E 53 41 43 54 49 4F 4E 20 43 42 87 01 01 90 00");
+        byte[] recvRead = Arrays.copyOfRange(recv, 2, recv[1]);
+        System.out.println(" ==> " + NumUtil.toHexString(recvRead)  );
+        byte[] recvReadApp = Arrays.copyOfRange(recvRead, 2, recvRead.length);
+        System.out.println(" ==> " + NumUtil.toHexString(recvReadApp)  );
 
-        }
+       HashMap<ByteBuffer, byte[]> parseOne = TLVParser.parseTVL(recvReadApp);
     }
+
+
+    //@Test
+    public void testKey() {
+        String sfi =  NumUtil.hex2String((byte)((1 << 3) | 4));
+        System.out.println("Sfi  : " + sfi);
+     }
 
 }

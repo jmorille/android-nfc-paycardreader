@@ -50,6 +50,7 @@ import java.util.Map;
 
 import eu.ttbox.ecard.util.AscciHelper;
 import eu.ttbox.ecard.util.TLVParser;
+import eu.ttbox.io7816.Application;
 import eu.ttbox.io7816.PseDirectory;
 
 /**
@@ -138,8 +139,12 @@ public class CreditCardInfosActivity extends Activity {
 
         try {
 
-            PseDirectory pseDirectory=  selectPseDirectory();
+            PseDirectory pseDirectory = selectPseDirectory();
             log(pseDirectory.toString());
+
+            Application app = readPseRecord(pseDirectory);
+            selectApplication(app);
+
             //6F 1A = 26
             // 84 0E = 14
             //  31 50 41 59 2E 53 59 53 2E 44 44 46 30 31
@@ -167,7 +172,7 @@ public class CreditCardInfosActivity extends Activity {
 
         // Parse FCI Template
         // -------------------
-        addText("Parse FCI Template");
+       // addText("Parse FCI Template");
         log("Parse FCI Template");
         HashMap<ByteBuffer, byte[]> parsedFciTemplate = TLVParser.parseTVL(fciTemplate);
         log(parsedFciTemplate);
@@ -185,23 +190,97 @@ public class CreditCardInfosActivity extends Activity {
         log("FCI Proprietary : " + NumUtil.toHexString(fciProprietary));
         //addText("FCI Proprietary", NumUtil.toHexString(fciProprietary));
 
-        addText("Parse FCI Proprietary");
+       // addText("Parse FCI Proprietary");
         HashMap<ByteBuffer, byte[]> parsedFciProprietary = TLVParser.parseTVL(fciProprietary);
         log(parsedFciProprietary);
         byte[] sfi = TLVParser.getTlvValue(parsedFciProprietary, "88");
         byte[] lang = TLVParser.getTlvValue(parsedFciProprietary, "5F2D");
-        String langValue =AscciHelper.toAscciString(lang);
-        addText("Lang",langValue );
+        String langValue = AscciHelper.toAscciString(lang);
+        addText("Lang", langValue);
         addText("sfi", NumUtil.toHexString(sfi));
 
         PseDirectory result = new PseDirectory();
-        result.lang =langValue;
-        result.dfName =dfNameString;
+        result.lang = langValue;
+        result.dfName = dfNameString;
         result.fsi = sfi[0];
 
         return result;
     }
 
+
+    public Application readPseRecord(PseDirectory pseDirectory) throws IOException {
+        log("[Step 2] Send READ RECORD with 0 to find out where the record is");
+        addText("[Step 2] Send READ RECORD with 0 to find out where the record is");
+        String sfi = NumUtil.hex2String((byte) ((pseDirectory.fsi << 3) | 4));
+        String cmd = "00 B2 01 " + sfi + " 00";
+        byte[] recv = transceive(cmd);
+        addText(NumUtil.toHexString(recv));
+
+        // Parse Read Pse Record
+        // -------------------
+        //  recv[0] == 0x70
+        //  recv[1] == Lenght
+        byte[] application = Arrays.copyOfRange(recv, 2, 2+ recv[1] );
+        log("Application : " + NumUtil.toHexString(application));
+
+        // Lenght of directory entry 1
+        //  application[0] == 0x61
+        byte lenghtDirectoryOne  = application[1];
+        // Application Id
+        //  application[2] == 0x4F
+        byte appIdSize = application[3];
+      //  addText("appIdSize", NumUtil.toHexString(new byte[]{application[3]}));
+        int appIdLenght = 4+appIdSize;
+        byte[] appId = Arrays.copyOfRange(application, 4, appIdLenght);
+        addText("App ID", NumUtil.toHexString(appId));
+
+        // application[appIdLenght+1] == 0x50
+        byte appLabelSize = application[appIdLenght+1];
+      //  addText("appLabelSize", NumUtil.toHexString(new byte[]{appLabelSize}));
+        int appLabelLenght = appIdLenght+appLabelSize+2;
+
+        byte[] appLabel = Arrays.copyOfRange(application, appIdLenght+2, appLabelLenght);
+        String appLabelString =  AscciHelper.toAscciString(appLabel);
+       // addText("App Label", NumUtil.toHexString(appLabel));
+        addText("App Label",appLabelString);
+
+        Application app = new Application();
+        app.appLabel =appLabelString;
+        app.appid = appId;
+        return app;
+    }
+
+    public void selectApplication(Application app)  throws IOException  {
+        log("[Step 4] Now that we know the AID, select the application");
+        addText("[Step 4] Now that we know the AID, select the application");
+        byte[] recv = transceive("00 A4 04 00 07 " +  NumUtil.toHexString(app.appid));
+        addText(NumUtil.toHexString(recv));
+
+        HashMap<ByteBuffer, byte[]> parsedRecv = TLVParser.parseTVL(recv);
+        byte[] fciTemplate = TLVParser.getTlvValue(parsedRecv, "6F");
+        log("FCI Template : " + NumUtil.toHexString(fciTemplate));
+        addText("FCI Template" , NumUtil.toHexString(fciTemplate));
+        // Parse FCI Template
+        // -------------------
+        // addText("Parse FCI Template");
+        log("Parse FCI Template");
+        HashMap<ByteBuffer, byte[]> parsedFciTemplate = TLVParser.parseTVL(fciTemplate);
+        log(parsedFciTemplate);
+        //addText(parsedFciTemplate);
+
+        // DF Name
+        byte[] dfName = TLVParser.getTlvValue(parsedFciTemplate, "84");
+         String dfNameString = null;//AscciHelper.toAscciString(dfName);
+        log("DF Name : " + NumUtil.toHexString(dfName) + " ==> " + dfNameString);
+        //DF Name : A0 00 00 00 42 10 10 ==> null
+        //addText("DF Name", dfNameString);
+
+        // Parse FCI Proprietary
+        byte[] fciProprietary = TLVParser.getTlvValue(parsedFciTemplate, "A5");
+        log("FCI Proprietary : " + NumUtil.toHexString(fciProprietary));
+        addText("FCI Proprietary", NumUtil.toHexString(fciProprietary));
+
+    }
 
     private void log(HashMap<ByteBuffer, byte[]> parsed) {
         for (Map.Entry<ByteBuffer, byte[]> entry : parsed.entrySet()) {

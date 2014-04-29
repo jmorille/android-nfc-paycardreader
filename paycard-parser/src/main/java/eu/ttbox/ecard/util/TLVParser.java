@@ -27,7 +27,7 @@ public class TLVParser {
     public static HashMap<ByteBuffer, byte[]> parseTVL(byte[] tlv, HashMap<ByteBuffer, byte[]> result) {
         int tlvSize = tlv != null ? tlv.length : 0;
         if (tlvSize % 2 != 0) {
-            throw new RuntimeException("Invalid tlv, null or odd length");
+  //          throw new RuntimeException("Invalid tlv, null or odd length");
         }
         for (int i = 0; i < tlvSize; ) {
             byte[] key = new byte[]{tlv[i++]};
