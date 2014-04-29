@@ -161,25 +161,30 @@ public class ECCardInfosActivity extends Activity {
             } else if (transceive("00 A4 04 0C 07 A0 00 00 00 04 30 60").length > 2) {
                 cardtype.setText("Maestro");
                 readCreditCard();
-            } else if ( transceive("00 A4 04 0C 07 A0 00 00 00 04 60 00").length > 2) {
+            } else if (transceive("00 A4 04 0C 07 A0 00 00 00 04 60 00").length > 2) {
                 cardtype.setText("Cirrus");
                 readCreditCard();
-            } else if ( transceive("00 A4 04 0C 07 A0 00 00 00 03 20 10" ).length > 2) {
+            } else if (transceive("00 A4 04 0C 07 A0 00 00 00 03 20 10").length > 2) {
                 cardtype.setText("Visa Electron");
                 readCreditCard();
-            } else if ( transceive("00 A4 04 0C 07 A0 00 00 00 03 20 20" ).length> 2) {
+            } else if (transceive("00 A4 04 0C 07 A0 00 00 00 03 20 20").length > 2) {
                 cardtype.setText("Visa V Pay");
                 readCreditCard();
-            } else if ( transceive("00 A4 04 0C 07 A0 00 00 00 03 80 10").length > 2) {
+            } else if (transceive("00 A4 04 0C 07 A0 00 00 00 03 80 10").length > 2) {
                 cardtype.setText("Visa V Pay");
                 readCreditCard();
             } else {
                 toastError(getResources().getText(R.string.error_card_unknown));
                 // readCreditCard();
-                readMasterFile();
-                readMasterFileByIdentifier();
+                // readMasterFile();
+                // readMasterFileByIdentifier();
 
-                readAllRecord();
+               selectCommand();
+                //readAllRecord();
+                readVisa();
+
+                log("Byte 04 => " + SharedUtils.convertByteAsBitString( (byte)0x04));
+                log("Byte 0C => " + SharedUtils.convertByteAsBitString( (byte)0x0C));
             }
 
             tagcomm.close();
@@ -188,18 +193,6 @@ public class ECCardInfosActivity extends Activity {
         }
     }
 
-    private void readMasterFile() {
-        log("Select Master File ");
-        try {
-            byte[] cmd = Iso7816Commands.selectMasterFile();
-           byte[] recv = transceive(cmd);
-
-
-        } catch (IOException e) {
-            Log.e(LOGTAG, "Error transmiting : " + e.getMessage());
-        }
-
-    }
 
     private void readMasterFileByIdentifier() {
         log("Select Master File ");
@@ -212,23 +205,88 @@ public class ECCardInfosActivity extends Activity {
 
     }
 
+
+    private void selectCommand() {
+        log("Select Commande File ");
+        try {
+            byte[] cmd = {0x00, (byte) 0xA4, 0x04, 0x00, 0x07, (byte) 0xA0, 0x00, 0x00, 0x00, 0x42, 0x10, 0x10};
+            byte[] recv = transceive(cmd);
+            log(" ==> " + SharedUtils.getDataAsString(recv));
+
+          //  readAllRecord(0);
+        } catch (IOException e) {
+            Log.e(LOGTAG, "Error transmiting : " + e.getMessage());
+        }
+
+    }
+
+    private void readVisa() {
+        try {
+            log("Read Visa ");
+            byte[] cmd = new byte[]{0x00, (byte) 0xA4, 0x04, 0x00, (byte) 0xA0, 0x00, 0x00, 0x00, 0x04};
+            byte[] recv = transceive(cmd);
+        } catch (IOException e) {
+            Log.e(LOGTAG, "Error transmiting : " + e.getMessage());
+        }
+        log("Read Visa Payload ");
+        byte[] readPayLogVisa = {0x00, (byte) 0xB2, 0x01, (byte) 0x8C, 0x00};
+        for (int i = 1; i <= 20; i++) {
+            readPayLogVisa[2] = (byte) i;
+            try {
+                byte[] recvPayLoad = transceive(readPayLogVisa);
+
+            } catch (IOException e) {
+                Log.e(LOGTAG, "Error transmiting : " + e.getMessage());
+            }
+        }
+
+    }
+
+    private void readMasterCard() {
+        try {
+            log("Read Master Card ");
+            byte[] cmd = {0x00, (byte) 0xB2, 0x01, 0x14, 0x00};
+            byte[] recv = transceive(cmd);
+        } catch (IOException e) {
+            Log.e(LOGTAG, "Error transmiting : " + e.getMessage());
+        }
+        log("Read Master Card Payload ");
+        byte readPayLogMC[] = {0x00, (byte) 0xB2, 0x01, 0x5C, 0x00};
+        for (int i = 1; i <= 20; i++) {
+            readPayLogMC[2] = (byte) i;
+            try {
+                byte[] recvPayLoad = transceive(readPayLogMC);
+
+            } catch (IOException e) {
+                Log.e(LOGTAG, "Error transmiting : " + e.getMessage());
+            }
+        }
+
+    }
+
     private void readAllRecord() {
+        for (int sfi = 0; sfi <= 30; sfi++) {
+            readAllRecord(sfi);
+        }
+    }
+
+    private void readAllRecord(int sfi) {
         ArrayList<String> responses = new ArrayList<String>();
-        int recordLimit = 2; // 255
-        for (int i=1; i<=recordLimit; i++) {
+        int recordLimit = 255; //= 2; //
+        for (int i = 1; i <= recordLimit; i++) {
             try {
                 log("Read Record : " + i);
-              //  for (int sfi = 0; sfi<=30; sfi++) {
-                    int sfi = 1;
-                    byte[] cmd = Iso7816Commands.readRecord(i, sfi);
-                    byte[] recv = transceive(cmd);
-                    if (recv.length > 2) {
-                        responses.add("--- record=" + i + "/ sfi=" + sfi + " : " +  SharedUtils.byte2Hex(cmd)
-                                + " ==> ("  + recv.length+ ")" + SharedUtils.byte2Hex(recv) //
-                                + "\n ==> " + new String(Arrays.copyOfRange(recv, 0, recv.length-2), "ISO-8859-1") //
-                        );
-                    }
-              //  }
+                //  for (int sfi = 0; sfi<=30; sfi++) {
+                //  int sfi = 1;
+                byte[] cmd = Iso7816Commands.readRecord(i, sfi);
+                byte[] recv = transceive(cmd);
+                if (recv.length > 2) {
+                    responses.add("--- record=" + i + "/ sfi=" + sfi + " : " + SharedUtils.byte2Hex(cmd)
+                            + " ==> (" + recv.length + ")" + SharedUtils.byte2Hex(recv) //
+                            + "\n ==> " + new String(Arrays.copyOfRange(recv, 0, recv.length - 2), "ISO-8859-1") //
+                    );
+                }
+                //  }
             } catch (IOException e) {
                 Log.e(LOGTAG, "Error transmiting : " + e.getMessage());
             }
@@ -302,12 +360,12 @@ public class ECCardInfosActivity extends Activity {
         return transceive(bytes);
     }
 
-    protected byte[] transceive( byte[] bytes) throws IOException {
+    protected byte[] transceive(byte[] bytes) throws IOException {
         log("Send: " + SharedUtils.byte2Hex(bytes));
         byte[] recv = tagcomm.transceive(bytes);
         // --> error list http://www.eftlab.co.uk/index.php/site-map/knowledge-base/118-apdu-response-list
         // Parse Error
-        ArrayList<Err> errors =  Errors.getError(recv);
+        ArrayList<Err> errors = Errors.getError(recv);
         if (!errors.isEmpty()) {
             for (Err err : errors) {
                 log("Received: " + SharedUtils.byte2Hex(recv) + " ==> " + err);
@@ -317,6 +375,7 @@ public class ECCardInfosActivity extends Activity {
         }
         return recv;
     }
+
     protected Dialog onCreateDialog(int id) {
         Dialog dialog;
 

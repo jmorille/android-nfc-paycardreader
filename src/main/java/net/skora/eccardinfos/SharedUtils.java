@@ -1,6 +1,9 @@
 package net.skora.eccardinfos;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
+import java.util.BitSet;
 
 public class SharedUtils {
 
@@ -58,4 +61,31 @@ public class SharedUtils {
         }
         return bytes;
     }
+
+    public static byte[] getData( byte[]  recv) {
+        int recvSize = recv.length;
+        if (recvSize>=2) {
+            return Arrays.copyOfRange(recv, 0, recvSize - 2);
+        }
+        return new  byte[0];
+    }
+
+    public static String getDataAsString(byte[] recv) {
+        byte[] data = getData(recv);
+        try {
+            String result =   new String(data,  "ISO-8859-1");
+            return result;
+        } catch (UnsupportedEncodingException e) {
+           return "Error : " + e.getMessage();
+        }
+
+    }
+
+    public static String convertByteAsBitString(byte b1) {
+        String s1 = String.format("%8s", Integer.toBinaryString(b1 & 0xFF));
+        s1 = s1.replace(' ', '0');
+        return s1;
+    }
+
+
 }

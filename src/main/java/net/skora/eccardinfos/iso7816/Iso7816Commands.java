@@ -10,6 +10,11 @@ import java.io.ByteArrayOutputStream;
  * See Iso7816-4:2005 Table 4.2
  *
  * @author sasc
+ *
+ * http://www.waazaa.org/14443/
+ * http://www.cardwerk.com/smartcards/smartcard_standard_ISO7816-4.aspx
+ * http://www.cardwerk.com/smartcards/smartcard_standard_ISO7816-4_6_basic_interindustry_commands.aspx
+ *
  */
 public class Iso7816Commands {
 
