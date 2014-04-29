@@ -367,6 +367,20 @@ public class ECCardInfosActivity extends Activity {
         log("Send: " + SharedUtils.byte2Hex(bytes));
         byte[] recv = tagcomm.transceive(bytes);
         // --> error list http://www.eftlab.co.uk/index.php/site-map/knowledge-base/118-apdu-response-list
+        // Manage Bad Size
+        int recvSize = recv.length;
+        if (recvSize>=2) {
+            byte sw1 = recv[recvSize - 2];
+            if (sw1 == (byte)0x6C) {
+                byte sw2 = recv[recvSize - 1];
+                byte[]   cmd = Arrays.copyOf(recv,bytes.length);
+                // Define the correct recaord Size
+                cmd[4] = sw2;
+                log("Correct Size of Command " +  SharedUtils.byte2Hex(bytes) + " ==> " + SharedUtils.byte2Hex(cmd));
+                return transceive(cmd);
+            }
+
+        }
         // Parse Error
         ArrayList<Err> errors = Errors.getError(recv);
         if (!errors.isEmpty()) {
