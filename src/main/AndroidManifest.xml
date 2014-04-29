@@ -13,13 +13,24 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name" >
         <activity
-            android:name=".ECCardInfosActivity"
+            android:name=".CreditCardInfosActivity"
             android:label="@string/app_name" android:clearTaskOnLaunch="true" android:alwaysRetainTaskState="true" android:finishOnTaskLaunch="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".ECCardInfosActivity"
+            android:label="@string/app_name" android:clearTaskOnLaunch="true" android:alwaysRetainTaskState="true" android:finishOnTaskLaunch="true">
+            <!--<intent-filter>-->
+                <!--<action android:name="android.intent.action.MAIN" />-->
+                <!--<category android:name="android.intent.category.LAUNCHER" />-->
+            <!--</intent-filter>-->
+        </activity>
+
+
         <activity android:name="TransactionsActivity" android:label="@string/activity_transactions" android:finishOnTaskLaunch="true" android:clearTaskOnLaunch="true"></activity>
     </application>
 </manifest>
