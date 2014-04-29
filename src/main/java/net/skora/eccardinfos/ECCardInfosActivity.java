@@ -223,8 +223,11 @@ public class ECCardInfosActivity extends Activity {
     private void readVisa() {
         try {
             log("Read Visa ");
+            // http://blog.saush.com/2006/09/08/getting-information-from-an-emv-chip-card/
             byte[] cmd = new byte[]{0x00, (byte) 0xA4, 0x04, 0x00, (byte) 0xA0, 0x00, 0x00, 0x00, 0x04};
             byte[] recv = transceive(cmd);
+           // byte[] recv =transceive("00 A4 04 00 A0 00 00 00 04");
+
         } catch (IOException e) {
             Log.e(LOGTAG, "Error transmiting : " + e.getMessage());
         }
