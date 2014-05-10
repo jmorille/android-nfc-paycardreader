@@ -89,10 +89,11 @@ public abstract class Command {
         }
         data = dataField;  
         
-        if(cmdBytes.length > data.length + ISO7816.LENGTH_APDU_HEADER)
-        	le = cmdBytes[cmdBytes.length-1];
-        else
-        	le = -1;       
+        if(cmdBytes.length > data.length + ISO7816.LENGTH_APDU_HEADER) {
+            le = cmdBytes[cmdBytes.length - 1];
+        }else {
+            le = -1;
+        }
     }
     else{
         le = -1;
@@ -130,10 +131,11 @@ public abstract class Command {
      }
      data = dataField;  
      
-     if(cmdBytes.length > data.length)
-     	le = cmdBytes[cmdBytes.length - 1];
-     else
-     	le = -1;
+     if(cmdBytes.length > data.length) {
+         le = cmdBytes[cmdBytes.length - 1];
+     } else {
+         le = -1;
+     }
    }  
   
   public final byte[] getBytes() throws IOException {

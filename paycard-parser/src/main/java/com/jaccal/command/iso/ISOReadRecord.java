@@ -45,16 +45,16 @@ public class ISOReadRecord extends ISOCommand{
        
     	byte [] b;
         
-        if(recordNumber.length() == 0)
-            setP1((byte)0);
-        else{
+        if(recordNumber.length() == 0) {
+            setP1((byte) 0);
+        }else{
             b = NumUtil.toStringHex(recordNumber);
             setP1(b[0]);
         }
 
-        if(le.length() == 0)
-            setLc((byte)0);
-        else{
+        if(le.length() == 0) {
+            setLc((byte) 0);
+        } else{
             b = NumUtil.toStringHex(le);
             setLc(b[0]);
         }
@@ -87,16 +87,16 @@ public class ISOReadRecord extends ISOCommand{
     	byte [] b;
     	byte c;
         
-        if(recordNumber.length() == 0)
-            setP1((byte)0);
-        else{
+        if(recordNumber.length() == 0) {
+            setP1((byte) 0);
+        } else{
             b = NumUtil.toStringHex(recordNumber);
             setP1(b[0]);
         }
 
-        if(fileSFI.length() == 0)
-            setP2((byte)0);
-        else{
+        if(fileSFI.length() == 0) {
+            setP2((byte) 0);
+        }else{
             b = NumUtil.toStringHex(fileSFI);
             if(NumUtil.getUnsignedValue(b[0]) >= (byte)0x1F)
                 throw new CardException("(ReadRecord) fileSFI is invalid");
@@ -104,9 +104,9 @@ public class ISOReadRecord extends ISOCommand{
             setP2(c);
         }
         
-        if(le.length() == 0)
-            setLc((byte)0);
-        else{
+        if(le.length() == 0) {
+            setLc((byte) 0);
+        }else{
             b = NumUtil.toStringHex(le);
             setLc(b[0]);
         }

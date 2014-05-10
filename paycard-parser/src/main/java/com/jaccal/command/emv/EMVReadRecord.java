@@ -28,9 +28,9 @@ public class EMVReadRecord extends ISOReadRecord {
     super(fileSFI, recordNumber, le);
 
     byte [] b;
-    if(fileSFI.length() == 0)
-      setP2((byte)0);
-    else{
+    if(fileSFI.length() == 0) {
+        setP2((byte) 0);
+    } else{
       b = NumUtil.toStringHex(fileSFI);
       if(NumUtil.getUnsignedValue(b[0]) >= (byte)0x1F)
         throw new CardException("(ReadRecord) fileSFI is invalid");
