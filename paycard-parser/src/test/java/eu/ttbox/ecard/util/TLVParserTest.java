@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import eu.ttbox.ecard.model.RecvTag;
+import eu.ttbox.ecard.model.SelectApplication;
 
 public class TLVParserTest {
 
@@ -114,11 +115,26 @@ public class TLVParserTest {
         Assert.assertTrue(parsePdol!=null);
         Assert.assertEquals(9 , parsePdol.size());
 
-
+        int pdolSize = 0;
         for (RecvTag tag : parsePdol ) {
             System.out.println(  "testParseDataObjectList ===>  Key " + NumUtil.hex2String(tag.key) + " : Size of " +  tag.valueSize);
+            pdolSize += tag.valueSize;
         }
+        System.out.println(  "testParseDataObjectList ===>  Total Size " + pdolSize + " ==> hex 0x" +  NumUtil.toHexString(new byte[] {(byte)pdolSize}));
+        System.out.println(  "testParseDataObjectList ===>  Byte number " + pdol.length + " ==> hex 0x" +  NumUtil.toHexString(new byte[] {(byte)pdol.length}));
+
 
     }
+
+    @Test
+    public void testSelectApplicationPDOL() {
+        byte[] pdol = ByteHelper.hex2Byte("9F 66 04 9F 02 06 9F 03 06 9F 1A 02 95 05 5F 2A 02 9A 03 9C 01 9F 37 04");
+        SelectApplication app = new SelectApplication();
+        app.pdol = pdol;
+
+        byte[] request =  app.generatePdolRequestData();
+        System.out.println(  "testSelectApplicationPDOL ===>  Request " + NumUtil.hex2String(request) + " : Size of " +  request.length + " ==> hex 0x" +  NumUtil.toHexString(new byte[] {(byte) request.length}));
+    }
+
 
 }

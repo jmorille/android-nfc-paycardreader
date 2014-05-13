@@ -42,10 +42,13 @@ import eu.ttbox.ecard.util.AscciHelper;
 import eu.ttbox.ecard.util.TLVParser;
 import eu.ttbox.io7816.Application;
 import eu.ttbox.io7816.PseDirectory;
-import eu.ttbox.io7816.SelectApplication;
+import eu.ttbox.ecard.model.SelectApplication;
 
 /**
  * http://blog.saush.com/2006/09/08/getting-information-from-an-emv-chip-card/
+ * http://www.nfc.cc/2012/04/02/android-app-reads-paypass-and-paywave-creditcards/
+ *
+ * http://www.acbm.com/inedits/cartes-bancaires-sans-contact.html
  */
 public class CreditCardInfosActivity extends Activity {
     // Dialogs
@@ -140,7 +143,7 @@ public class CreditCardInfosActivity extends Activity {
             Application app = readPseRecord(pseDirectory);
             SelectApplication selectApp =  selectApplication(app);
 
-            GetAFL afl = getAppFileLocator( selectApp );
+            GetAFL afl = getGetProcessingOptions(selectApp);
             getRecordInformation(  afl);
             //6F 1A = 26
             // 84 0E = 14
@@ -158,9 +161,15 @@ public class CreditCardInfosActivity extends Activity {
     private PseDirectory selectPseDirectory() throws IOException {
         // [Step 1] Select 1PAY.SYS.DDF01 to get the PSE directory
         addText("[Step 1] Select 1PAY.SYS.DDF01 to get the PSE directory");
-        log("[Step 1] Select 1PAY.SYS.DDF01 to get the PSE directory");
-        byte[] recv = transceive("00 A4 04 00 0E 31 50 41 59 2E 53 59 53 2E 44 44 46 30 31");
+         log("[Step 1] Select 1PAY.SYS.DDF01 to get the PSE directory");
+         byte[] recv = transceive("00 A4 04 00 0E 31 50 41 59 2E 53 59 53 2E 44 44 46 30 31");
+
+        //addText("[Step 1] Select 2PAY.SYS.DDF01 to get the PSE directory");
+        //log("[Step 1] Select 2PAY.SYS.DDF01 to get the PSE directory");
+        //byte[] recv = transceive("00 A4 04 00 0E 32 50 41 59 2E 53 59 53 2E 44 44 46 30 31 00");
+
         addText(NumUtil.toHexString(recv));
+
         // Parse Pse Direcory
         // -------------------
         HashMap<RecvTag, byte[]> parsedRecv = TLVParser.parseTVL(recv);
@@ -305,20 +314,33 @@ public class CreditCardInfosActivity extends Activity {
         if (pdol !=null) {
             //http://www.openscdp.org/scripts/tutorial/emv/initiateapplicationprocess.html
             ArrayList<RecvTag> parsedPdol = TLVParser.parseDataObjectList(pdol);
+            int pdolSize = 0;
+            for (RecvTag recvTag : parsedPdol) {
+                pdolSize += recvTag.valueSize;
+                addText("PDOL" ,recvTag.toString());
+                log("PDOL : " + recvTag.toString());
+            }
+          //  addText("PDOL Size " ,pdolSize);
+            log("PDOL Size : "  + pdolSize);
         }
         return selectApp;
     }
 
-    public GetAFL getAppFileLocator( SelectApplication selectApp )  throws IOException  {
+    public GetAFL getGetProcessingOptions(SelectApplication selectApp)  throws IOException  {
         addTextSeparation();
+        //http://stackoverflow.com/questions/15059580/reading-emv-card-using-ppse-and-not-pse
+        // http://www.acbm.com/inedits/cartes-bancaires-sans-contact.html
         log("[Step 5] Send GET PROCESSING OPTIONS command");
         addText("[Step 5] Send GET PROCESSING OPTIONS command");
         String pdol = "83 00";
         if (selectApp!=null && selectApp.pdol !=null) {
             ArrayList<RecvTag> parsedPdol = TLVParser.parseDataObjectList(selectApp.pdol);
-            RecvTag tag = parsedPdol.get(0);
+            int pdolSize = 0;
+            for (RecvTag recvTag : parsedPdol) {
+                pdolSize += recvTag.valueSize;
+            }
 
-            pdol =  NumUtil.toHexString(tag.key) + " " + NumUtil.toHexString(new byte[] {(byte)tag.valueSize});
+            pdol = NumUtil.toHexString(new byte[] {(byte)pdolSize}) + " "  + NumUtil.toHexString(selectApp.pdol);
         }
         byte[] recv = transceive("80 A8 00 00 02 " +  pdol);
         addText(NumUtil.toHexString(recv));

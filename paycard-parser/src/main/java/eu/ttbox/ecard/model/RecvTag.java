@@ -24,6 +24,26 @@ public class RecvTag {
         this.valueSize = valueSize;
     }
 
+    public byte[] getValueSizeAsBytes(){
+        return new byte[] {(byte)valueSize};
+    }
+
+    /**
+     * @return  returned String will be "00 11 22 AA"
+     */
+    public String getKeytoHexString(){
+       return  NumUtil.toHexString(key);
+    }
+
+    /**
+     *
+     * @return  returned String will be "001122AA"
+     */
+    public String getKeyHex2String(){
+        return  NumUtil.hex2String(key);
+    }
+
+
 
     @Override
     public boolean equals(Object o) {
@@ -52,7 +72,7 @@ public class RecvTag {
     @Override
     public String toString() {
         return "RecvTag{" +
-                "key=" + Arrays.toString(key) +
+                "key=" + NumUtil.toHexString(key)   +
                 ", valueSize=" + valueSize +
                 '}';
     }
