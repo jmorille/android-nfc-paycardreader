@@ -133,7 +133,7 @@ public class TLVParserTest {
         app.pdol = pdol;
 
         byte[] request =  app.generatePdolRequestData();
-        System.out.println(  "testSelectApplicationPDOL ===>  Request " + NumUtil.hex2String(request) + " : Size of " +  request.length + " ==> hex 0x" +  NumUtil.toHexString(new byte[] {(byte) request.length}));
+        System.out.println(  "testSelectApplicationPDOL ===>  Request " + NumUtil.toHexString(request) + " : Size of " +  request.length + " ==> hex 0x" +  NumUtil.toHexString(new byte[] {(byte) request.length}));
     }
 
 
