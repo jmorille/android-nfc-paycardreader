@@ -42,6 +42,7 @@ import eu.ttbox.ecard.util.ApplicationFileLocatorParser;
 import eu.ttbox.ecard.util.AscciHelper;
 import eu.ttbox.ecard.util.TLVParser;
 import eu.ttbox.ecard.util.paycard.Emv41Enum;
+import eu.ttbox.ecard.util.paycard.Emv41TypeEnum;
 import eu.ttbox.ecard.util.paycard.PayCardTLVParser;
 import eu.ttbox.io7816.Application;
 import eu.ttbox.io7816.PseDirectory;
@@ -186,7 +187,7 @@ public class CreditCardInfosActivity extends Activity {
         // Parse Pse Direcory
         // -------------------
         HashMap<RecvTag, byte[]> parsedRecv = PayCardTLVParser.parsePayCardTVLInDept(recv);
-
+        addText(parsedRecv);
 
         // DF Name
         byte[] dfName = TLVParser.getTlvValue(parsedRecv, "84");
@@ -261,6 +262,7 @@ public class CreditCardInfosActivity extends Activity {
         addText(NumUtil.toHexString(recv));
 
         HashMap<RecvTag, byte[]> parsedRecv = PayCardTLVParser.parsePayCardTVLInDept(recv);
+        addText(parsedRecv);
 
         // Parse FCI Template
         // -------------------
@@ -352,7 +354,21 @@ public class CreditCardInfosActivity extends Activity {
 
     private void addText(HashMap<RecvTag, byte[]> parsed) {
         for (Map.Entry<RecvTag, byte[]> entry : parsed.entrySet()) {
-            addText(NumUtil.hex2String(entry.getKey().key), NumUtil.toHexString(entry.getValue()));
+            RecvTag tag = entry.getKey();
+            byte[] tagValue = entry.getValue();
+            // Search Label
+            Emv41Enum emv =  Emv41Enum.getByTag(tag);
+            String keyLabel ;
+            String valueLabel ;
+            if (emv==null) {
+                keyLabel = tag.toString();
+                valueLabel = Emv41TypeEnum.UNNKOWN.toString(tagValue);
+            } else {
+                keyLabel = emv.name() + "(" +tag.toString() +  ")";
+                valueLabel= emv.toString(tagValue);
+            }
+
+            addText(keyLabel, valueLabel);
         }
     }
 
