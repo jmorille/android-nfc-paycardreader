@@ -160,9 +160,14 @@ public class CreditCardInfosActivity extends Activity {
 
     private PseDirectory selectPseDirectory() throws IOException {
         // [Step 1] Select 1PAY.SYS.DDF01 to get the PSE directory
+        String fileName = "1PAY.SYS.DDF01";
+        byte[] fileNameAsBytes = AscciHelper.ascciStringToBytes(fileName);
+        String fileNameAsHex = NumUtil.toHexString(fileNameAsBytes);
+
         addText("[Step 1] Select 1PAY.SYS.DDF01 to get the PSE directory");
          log("[Step 1] Select 1PAY.SYS.DDF01 to get the PSE directory");
-         byte[] recv = transceive("00 A4 04 00 0E 31 50 41 59 2E 53 59 53 2E 44 44 46 30 31");
+//        byte[] recv = transceive("00 A4 04 00 0E 31 50 41 59 2E 53 59 53 2E 44 44 46 30 31");
+         byte[] recv = transceive("00 A4 04 00 0E " + fileNameAsHex);
 
         //addText("[Step 1] Select 2PAY.SYS.DDF01 to get the PSE directory");
         //log("[Step 1] Select 2PAY.SYS.DDF01 to get the PSE directory");

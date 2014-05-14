@@ -10,18 +10,20 @@ public class AscciHelperTest {
 
     @Test
     public void testHex2Ascci() {
-        byte[] data = NumUtil.toStringHex("315041592E5359532E4444463031");
+        String hexString = "315041592E5359532E4444463031";
+        byte[] data = NumUtil.toStringHex(hexString);
         String text = AscciHelper.toAscciString(data);
 
         Assert.assertEquals("1PAY.SYS.DDF01", text);
-        System.out.println("315041592E5359532E4444463031 ==> " +text);
+        System.out.println("" +hexString +  " ==> " +text);
     }
 
     @Test
     public void testAscci2Hex() {
-        byte[] text = AscciHelper.ascciStringToBytes("1PAY.SYS.DDF01");
+        String fileName = "1PAY.SYS.DDF01";
+        byte[] text = AscciHelper.ascciStringToBytes(fileName);
         String texthex = NumUtil.hex2String(text);
         Assert.assertEquals("315041592E5359532E4444463031", texthex);
-        System.out.println("1PAY.SYS.DDF01 ==> " + texthex);
+        System.out.println("" +fileName+   " ==> " + texthex);
     }
 }
