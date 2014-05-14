@@ -332,17 +332,12 @@ public class CreditCardInfosActivity extends Activity {
         // http://www.acbm.com/inedits/cartes-bancaires-sans-contact.html
         log("[Step 5] Send GET PROCESSING OPTIONS command");
         addText("[Step 5] Send GET PROCESSING OPTIONS command");
-        String pdol = "83 00";
+        String pdol = "83";
         if (selectApp!=null && selectApp.pdol !=null) {
-            ArrayList<RecvTag> parsedPdol = TLVParser.parseDataObjectList(selectApp.pdol);
-            int pdolSize = 0;
-            for (RecvTag recvTag : parsedPdol) {
-                pdolSize += recvTag.valueSize;
-            }
-
-            pdol = NumUtil.toHexString(new byte[] {(byte)pdolSize}) + " "  + NumUtil.toHexString(selectApp.pdol);
+             byte[] pdolValues =   selectApp.generatePdolRequestData();
+            pdol = NumUtil.toHexString(new byte[] {(byte)pdolValues.length}) + " "  + NumUtil.toHexString(pdolValues);
         }
-        byte[] recv = transceive("80 A8 00 00 02 " +  pdol);
+        byte[] recv = transceive("80 A8 00 00 02 " +  pdol + " 00");
         addText(NumUtil.toHexString(recv));
 
         GetAFL afl =  ApplicationFileLocatorParser.parseAFL(recv);

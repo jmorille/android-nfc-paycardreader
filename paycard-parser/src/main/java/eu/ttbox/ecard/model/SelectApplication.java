@@ -82,6 +82,10 @@ public class SelectApplication {
                 System.out.println("generatePdolRequestData ===>  Request " + NumUtil.toHexString(dest) + " : Size of " + dest.length + " ==> hex 0x" + NumUtil.toHexString(new byte[]{(byte) dest.length}));
 
             }
+            //Check Total Size
+            if (index!= dest.length) {
+                throw new RuntimeException("Bad PDOL value Size");
+            }
             result = dest;
         }
         return result;
