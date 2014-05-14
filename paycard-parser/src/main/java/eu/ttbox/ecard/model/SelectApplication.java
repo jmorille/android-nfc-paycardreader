@@ -5,6 +5,8 @@ import com.jaccal.util.NumUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 
 import eu.ttbox.ecard.util.ByteHelper;
 import eu.ttbox.ecard.util.TLVParser;
@@ -35,9 +37,7 @@ public class SelectApplication {
                     // 9F66	 Terminal transaction Qualifiers	 4 octets
                     // binary 32
                      // 32 00 00 00
-                    byte[] src = ByteHelper.hex2Byte("32 00 00 00");
-                    System.arraycopy(src, 0, dest, index, src.length);
-
+                    writeRecvTag(dest, index, tag,"32 00 00 00");
                 } else if ("9F02".equals(key)) {
                     // 9F02	 Amount, Authorized (Numeric)	 6 octets
                     // n 12 ==> 00 00 00 01 00 00
@@ -50,8 +50,7 @@ public class SelectApplication {
                     // 9F1A	 Terminal Country Code	 2 octets
                     // n 3 ==> Indicates the country of the terminal, represented according to ISO 3166-1
                     // 02 50
-                    byte[] src = ByteHelper.hex2Byte("02 50");
-                    System.arraycopy(src, 0, dest, index, src.length);
+                    writeRecvTag(dest, index, tag,"02 50");
                  } else if ("9505".equals(key)) {
                     // 9505	 Terminal Verification Results	 5 octets
                     // 00 00 00 00 00
@@ -59,14 +58,13 @@ public class SelectApplication {
                     // 5F2A	 Transaction Currency Code	 2 octets
                     // n 3 ==> Indicates the currency code of the transaction according to ISO 4217 ==> 0978
                     // 09 78
-                    byte[] src = ByteHelper.hex2Byte("09 78");
-                    System.arraycopy(src, 0, dest, index, src.length);
+                    writeRecvTag(dest, index, tag,"09 78");
                  } else if ("9A".equals(key)) {
                     // 9A   Transaction Date	 3 octets
                     // n 6 (YYMMDD) ==> Local date that the transaction was authorised
                     // 12 12 31
-                    byte[] src = ByteHelper.hex2Byte("12 12 31");
-                    System.arraycopy(src, 0, dest, index, src.length);
+ // TODO                   Calendar now = Calendar.getInstance();
+                     writeRecvTag(dest, index, tag, "12 12 31");
                  } else if ("9C".equals(key)) {
                     // 9C   Transaction Type	 1 octet
                     // n 2 ==> Always '00'
@@ -76,10 +74,10 @@ public class SelectApplication {
                     // 9F37	 Unpredictable Number	 4 octets
                     // binary ==> Value to provide variability and uniqueness to the generation of a cryptogram
                     // E4 EC 9E 52 00
-                    byte[] src = ByteHelper.hex2Byte("E4 EC 9E 52 00");
-                    System.arraycopy(src, 0, dest, index, src.length);
+                    writeRecvTag(dest, index, tag, "E4 EC 9E 52");
                 }
                 // Copy Values
+                // Rest  00
                 index += tag.valueSize;
                 System.out.println("generatePdolRequestData ===>  Request " + NumUtil.toHexString(dest) + " : Size of " + dest.length + " ==> hex 0x" + NumUtil.toHexString(new byte[]{(byte) dest.length}));
 
@@ -88,4 +86,25 @@ public class SelectApplication {
         }
         return result;
     }
+
+    private void writeRecvTag( byte[] dest , int index, RecvTag tag, String value) {
+        byte[] src = ByteHelper.hex2Byte(value);
+        writeRecvTag(dest, index, tag, src);
+    }
+
+
+    private void writeRecvTag( byte[] dest , int index, RecvTag tag, byte[] value) {
+        // Check Validity
+        int maxSize = tag.valueSize;
+        int copySize = value.length;
+        if (copySize>maxSize) {
+            throw new IllegalArgumentException("Error Copy Tag " + tag + " for the value " +  NumUtil.toHexString(value) );
+        }
+        // Do Copy
+        System.arraycopy(value, 0, dest, index, copySize);
+    }
+
 }
+
+
+
