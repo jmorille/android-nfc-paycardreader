@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import eu.ttbox.ecard.model.RecvTag;
+import eu.ttbox.ecard.util.paycard.Emv41Enum;
 
 //http://stackoverflow.com/questions/11473974/is-there-a-java-parser-for-ber-tlv
 // http://www.emvlab.org/tlvutils/
@@ -21,9 +22,13 @@ public class TLVParser {
     }
 
 
+
+
+
     public static HashMap<RecvTag, byte[]> parseTVL(byte[] tlv) {
         return parseTVL(tlv, null);
     }
+
 
     // http://stackoverflow.com/questions/11473974/is-there-a-java-parser-for-ber-tlv
     public static HashMap<RecvTag, byte[]> parseTVL(byte[] tlv, HashMap<RecvTag, byte[]> presult) {
@@ -75,8 +80,15 @@ public class TLVParser {
 
     public static byte[] getTlvValue(HashMap<RecvTag, byte[]> parsed, byte[] key) {
         RecvTag keyMap = new RecvTag(key);
-        return parsed.get(keyMap);
+        return getTlvValue(parsed, keyMap);
+    }
 
+    public static byte[] getTlvValue(HashMap<RecvTag, byte[]> parsed, Emv41Enum keyMap) {
+        return getTlvValue(parsed, keyMap.tag);
+    }
+
+    public static byte[] getTlvValue(HashMap<RecvTag, byte[]> parsed, RecvTag keyMap) {
+        return parsed.get(keyMap);
     }
 
 }

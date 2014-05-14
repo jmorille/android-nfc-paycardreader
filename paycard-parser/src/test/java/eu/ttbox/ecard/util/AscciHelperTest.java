@@ -26,4 +26,13 @@ public class AscciHelperTest {
         Assert.assertEquals("315041592E5359532E4444463031", texthex);
         System.out.println("" +fileName+   " ==> " + texthex);
     }
+
+    @Test
+    public void testToStringHex() {
+        String fileName = "1PAY.SYS.DDF01";
+        byte[] text = NumUtil.toStringHex(fileName);
+        String texthex = NumUtil.hex2String(text);
+        Assert.assertEquals("315041592E5359532E4444463031", texthex);
+        System.out.println("" +fileName+   " ==> " + texthex);
+    }
 }

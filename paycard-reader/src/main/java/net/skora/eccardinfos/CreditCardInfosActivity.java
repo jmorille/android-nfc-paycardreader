@@ -1,4 +1,3 @@
-
 package net.skora.eccardinfos;
 
 import android.app.Activity;
@@ -21,6 +20,8 @@ import com.jaccal.CardException;
 import com.jaccal.CardResponse;
 import com.jaccal.StatusWord;
 import com.jaccal.command.Command;
+import com.jaccal.command.emv.EMV4_1;
+import com.jaccal.command.iso.ISOSelect;
 import com.jaccal.util.NumUtil;
 
 import net.skora.eccardinfos.error.Err;
@@ -28,7 +29,6 @@ import net.skora.eccardinfos.error.Errors;
 import net.skora.eccardinfos.iso7816.Iso7816Commands;
 
 import java.io.IOException;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -37,17 +37,19 @@ import java.util.Map;
 import eu.ttbox.ecard.model.AflRecord;
 import eu.ttbox.ecard.model.GetAFL;
 import eu.ttbox.ecard.model.RecvTag;
+import eu.ttbox.ecard.model.SelectApplication;
 import eu.ttbox.ecard.util.ApplicationFileLocatorParser;
 import eu.ttbox.ecard.util.AscciHelper;
 import eu.ttbox.ecard.util.TLVParser;
+import eu.ttbox.ecard.util.paycard.Emv41Enum;
+import eu.ttbox.ecard.util.paycard.PayCardTLVParser;
 import eu.ttbox.io7816.Application;
 import eu.ttbox.io7816.PseDirectory;
-import eu.ttbox.ecard.model.SelectApplication;
 
 /**
  * http://blog.saush.com/2006/09/08/getting-information-from-an-emv-chip-card/
  * http://www.nfc.cc/2012/04/02/android-app-reads-paypass-and-paywave-creditcards/
- *
+ * <p/>
  * http://www.acbm.com/inedits/cartes-bancaires-sans-contact.html
  */
 public class CreditCardInfosActivity extends Activity {
@@ -101,6 +103,7 @@ public class CreditCardInfosActivity extends Activity {
     }
 
     private void addText(String text) {
+        log(text);
         adpater.add(text);
     }
 
@@ -141,10 +144,10 @@ public class CreditCardInfosActivity extends Activity {
             log(pseDirectory.toString());
 
             Application app = readPseRecord(pseDirectory);
-            SelectApplication selectApp =  selectApplication(app);
+            SelectApplication selectApp = selectApplication(app);
 
             GetAFL afl = getGetProcessingOptions(selectApp);
-            getRecordInformation(  afl);
+            getRecordInformation(afl);
             //6F 1A = 26
             // 84 0E = 14
             //  31 50 41 59 2E 53 59 53 2E 44 44 46 30 31
@@ -159,15 +162,20 @@ public class CreditCardInfosActivity extends Activity {
     }
 
     private PseDirectory selectPseDirectory() throws IOException {
-        // [Step 1] Select 1PAY.SYS.DDF01 to get the PSE directory
         String fileName = "1PAY.SYS.DDF01";
+       // String fileName = "2PAY.SYS.DDF01";
+
+ // new ISOSelect(ISOSelect.SELECT_AID, EMV4_1.AID_1PAY_SYS_DDF01);
+
+          return selectPseDirectory(fileName);
+    }
+    private PseDirectory selectPseDirectory(String fileName) throws IOException {
+        // [Step 1] Select 1PAY.SYS.DDF01 to get the PSE directory
+        addText("[Step 1] Select " +fileName +  " to get the PSE directory");
         byte[] fileNameAsBytes = AscciHelper.ascciStringToBytes(fileName);
         String fileNameAsHex = NumUtil.toHexString(fileNameAsBytes);
-
-        addText("[Step 1] Select 1PAY.SYS.DDF01 to get the PSE directory");
-         log("[Step 1] Select 1PAY.SYS.DDF01 to get the PSE directory");
 //        byte[] recv = transceive("00 A4 04 00 0E 31 50 41 59 2E 53 59 53 2E 44 44 46 30 31");
-         byte[] recv = transceive("00 A4 04 00 0E " + fileNameAsHex);
+        byte[] recv = transceive("00 A4 04 00 0E " + fileNameAsHex);
 
         //addText("[Step 1] Select 2PAY.SYS.DDF01 to get the PSE directory");
         //log("[Step 1] Select 2PAY.SYS.DDF01 to get the PSE directory");
@@ -177,37 +185,18 @@ public class CreditCardInfosActivity extends Activity {
 
         // Parse Pse Direcory
         // -------------------
-        HashMap<RecvTag, byte[]> parsedRecv = TLVParser.parseTVL(recv);
-        byte[] fciTemplate = TLVParser.getTlvValue(parsedRecv, "6F");
-        log("FCI Template : " + NumUtil.toHexString(fciTemplate));
-        //addText("FCI Template", NumUtil.toHexString(fciTemplate));
-
-        // Parse FCI Template
-        // -------------------
-       // addText("Parse FCI Template");
-        log("Parse FCI Template");
-        HashMap<RecvTag, byte[]> parsedFciTemplate = TLVParser.parseTVL(fciTemplate);
-        log(parsedFciTemplate);
-        //addText(parsedFciTemplate);
+        HashMap<RecvTag, byte[]> parsedRecv = PayCardTLVParser.parsePayCardTVLInDept(recv);
 
 
         // DF Name
-        byte[] dfName = TLVParser.getTlvValue(parsedFciTemplate, "84");
+        byte[] dfName = TLVParser.getTlvValue(parsedRecv, "84");
         String dfNameString = AscciHelper.toAscciString(dfName);
         log("DF Name : " + NumUtil.toHexString(dfName) + " ==> " + dfNameString);
         addText("DF Name", dfNameString);
 
-        // Parse FCI Proprietary
-        // -------------------
-        byte[] fciProprietary = TLVParser.getTlvValue(parsedFciTemplate, "A5");
-        log("FCI Proprietary : " + NumUtil.toHexString(fciProprietary));
-        //addText("FCI Proprietary", NumUtil.toHexString(fciProprietary));
 
-       // addText("Parse FCI Proprietary");
-        HashMap<RecvTag, byte[]> parsedFciProprietary = TLVParser.parseTVL(fciProprietary);
-        log(parsedFciProprietary);
-        byte[] sfi = TLVParser.getTlvValue(parsedFciProprietary, "88");
-        byte[] lang = TLVParser.getTlvValue(parsedFciProprietary, "5F2D");
+        byte[] sfi = TLVParser.getTlvValue(parsedRecv, "88");
+        byte[] lang = TLVParser.getTlvValue(parsedRecv, "5F2D");
         String langValue = AscciHelper.toAscciString(lang);
         addText("Lang", langValue);
         addText("sfi", NumUtil.toHexString(sfi));
@@ -234,123 +223,114 @@ public class CreditCardInfosActivity extends Activity {
         // -------------------
         //  recv[0] == 0x70
         //  recv[1] == Lenght
-        byte[] application = Arrays.copyOfRange(recv, 2, 2+ recv[1] );
+        byte[] application = Arrays.copyOfRange(recv, 2, 2 + recv[1]);
         log("Application : " + NumUtil.toHexString(application));
 
         // Lenght of directory entry 1
         //  application[0] == 0x61
-        byte lenghtDirectoryOne  = application[1];
+        byte lenghtDirectoryOne = application[1];
         // Application Id
         //  application[2] == 0x4F
         byte appIdSize = application[3];
-      //  addText("appIdSize", NumUtil.toHexString(new byte[]{application[3]}));
-        int appIdLenght = 4+appIdSize;
+        //  addText("appIdSize", NumUtil.toHexString(new byte[]{application[3]}));
+        int appIdLenght = 4 + appIdSize;
         byte[] appId = Arrays.copyOfRange(application, 4, appIdLenght);
         addText("App ID", NumUtil.toHexString(appId));
 
         // application[appIdLenght+1] == 0x50
-        byte appLabelSize = application[appIdLenght+1];
-      //  addText("appLabelSize", NumUtil.toHexString(new byte[]{appLabelSize}));
-        int appLabelLenght = appIdLenght+appLabelSize+2;
+        byte appLabelSize = application[appIdLenght + 1];
+        //  addText("appLabelSize", NumUtil.toHexString(new byte[]{appLabelSize}));
+        int appLabelLenght = appIdLenght + appLabelSize + 2;
 
-        byte[] appLabel = Arrays.copyOfRange(application, appIdLenght+2, appLabelLenght);
-        String appLabelString =  AscciHelper.toAscciString(appLabel);
-       // addText("App Label", NumUtil.toHexString(appLabel));
-        addText("App Label",appLabelString);
+        byte[] appLabel = Arrays.copyOfRange(application, appIdLenght + 2, appLabelLenght);
+        String appLabelString = AscciHelper.toAscciString(appLabel);
+        // addText("App Label", NumUtil.toHexString(appLabel));
+        addText("App Label", appLabelString);
 
         Application app = new Application();
-        app.appLabel =appLabelString;
+        app.appLabel = appLabelString;
         app.appid = appId;
         return app;
     }
 
-    public SelectApplication selectApplication(Application app)  throws IOException  {
+    public SelectApplication selectApplication(Application app) throws IOException {
         addTextSeparation();
         log("[Step 4] Now that we know the AID, select the application");
         addText("[Step 4] Now that we know the AID, select the application");
-        byte[] recv = transceive("00 A4 04 00 07 " +  NumUtil.toHexString(app.appid));
+        byte[] recv = transceive("00 A4 04 00 07 " + NumUtil.toHexString(app.appid));
         addText(NumUtil.toHexString(recv));
 
-        HashMap<RecvTag, byte[]> parsedRecv = TLVParser.parseTVL(recv);
-        byte[] fciTemplate = TLVParser.getTlvValue(parsedRecv, "6F");
-        log("FCI Template : " + NumUtil.toHexString(fciTemplate));
-        //addText("FCI Template" , NumUtil.toHexString(fciTemplate));
+        HashMap<RecvTag, byte[]> parsedRecv = PayCardTLVParser.parsePayCardTVLInDept(recv);
 
         // Parse FCI Template
         // -------------------
-        // addText("Parse FCI Template");
-        log("Parse FCI Template");
-        HashMap<RecvTag, byte[]> parsedFciTemplate = TLVParser.parseTVL(fciTemplate);
-        log(parsedFciTemplate);
-        //addText(parsedFciTemplate);
-
         // DF Name
-        byte[] dfName = TLVParser.getTlvValue(parsedFciTemplate, "84");
-         String dfNameString = null;//AscciHelper.toAscciString(dfName);
+        byte[] dfName = TLVParser.getTlvValue(parsedRecv, Emv41Enum.DF_FCI_NAME  );
+        String dfNameString = null;//AscciHelper.toAscciString(dfName);
         log("DF Name : " + NumUtil.toHexString(dfName) + " ==> " + dfNameString);
         //DF Name : A0 00 00 00 42 10 10 ==> null
         //addText("DF Name", dfNameString);
 
         // Parse FCI Proprietary
-        byte[] fciProprietary = TLVParser.getTlvValue(parsedFciTemplate, "A5");
-        log("FCI Proprietary : " + NumUtil.toHexString(fciProprietary));
-     //   addText("FCI Proprietary", NumUtil.toHexString(fciProprietary));
-
-        // Parse FCI Proprietary
         // -------------------
-        HashMap<RecvTag, byte[]> parsedFciProprietary = TLVParser.parseTVL(fciProprietary);
-        log(parsedFciProprietary);
-        byte[] appLabel = TLVParser.getTlvValue(parsedFciProprietary, "50");
-        byte[] appPriorityIndicator = TLVParser.getTlvValue(parsedFciProprietary, "87");
-          byte[] lang = TLVParser.getTlvValue(parsedFciProprietary, "5F2D");
-        byte[] appPrefName= TLVParser.getTlvValue(parsedFciProprietary, "9F12");
-        String appPrefNameString =  AscciHelper.toAscciString(appPrefName);
-        addText("App Pref Name" , appPrefNameString);
-        byte[] iserDicretionnarayData= TLVParser.getTlvValue(parsedFciProprietary, "BF0C");
+        byte[] appLabel = TLVParser.getTlvValue(parsedRecv, Emv41Enum.DF_ADF_LABEL  );
+        byte[] appPriorityIndicator = TLVParser.getTlvValue(parsedRecv, Emv41Enum.DF_ADF_PRIORITY );
+        byte[] lang = TLVParser.getTlvValue(parsedRecv, Emv41Enum.DF_FCI_LANG );
+        byte[] appPrefName = TLVParser.getTlvValue(parsedRecv, Emv41Enum.DF_ADF_PREFERRED_NAME);
+        String appPrefNameString = AscciHelper.toAscciString(appPrefName);
+        addText("App Pref Name", appPrefNameString);
+        byte[] iserDicretionnarayData = TLVParser.getTlvValue(parsedRecv, "BF0C");
 
         // Parse PDOL
         // -------------------
-        byte[] pdol = TLVParser.getTlvValue(parsedFciProprietary, "9F38");
+        byte[] pdol = TLVParser.getTlvValue(parsedRecv, Emv41Enum.PDOL  );
         log("PDOL : " + NumUtil.toHexString(pdol));
-        addText("PDOL" , NumUtil.toHexString(pdol));
+        addText("PDOL", NumUtil.toHexString(pdol));
 
         SelectApplication selectApp = new SelectApplication();
         selectApp.pdol = pdol;
-        if (pdol !=null) {
-            //http://www.openscdp.org/scripts/tutorial/emv/initiateapplicationprocess.html
-            ArrayList<RecvTag> parsedPdol = TLVParser.parseDataObjectList(pdol);
-            int pdolSize = 0;
-            for (RecvTag recvTag : parsedPdol) {
-                pdolSize += recvTag.valueSize;
-                addText("PDOL" ,recvTag.toString());
-                log("PDOL : " + recvTag.toString());
-            }
-          //  addText("PDOL Size " ,pdolSize);
-            log("PDOL Size : "  + pdolSize);
-        }
         return selectApp;
     }
 
-    public GetAFL getGetProcessingOptions(SelectApplication selectApp)  throws IOException  {
+    public GetAFL getGetProcessingOptions(SelectApplication selectApp) throws IOException {
         addTextSeparation();
         //http://stackoverflow.com/questions/15059580/reading-emv-card-using-ppse-and-not-pse
         // http://www.acbm.com/inedits/cartes-bancaires-sans-contact.html
         log("[Step 5] Send GET PROCESSING OPTIONS command");
         addText("[Step 5] Send GET PROCESSING OPTIONS command");
-        String pdol = "83";
-        if (selectApp!=null && selectApp.pdol !=null) {
-             byte[] pdolValues =   selectApp.generatePdolRequestData();
-            pdol = NumUtil.toHexString(new byte[] {(byte)pdolValues.length}) + " "  + NumUtil.toHexString(pdolValues);
+
+        byte[] pdolTlv = new byte[] { (byte) 0x83  };
+        if (selectApp != null && selectApp.pdol != null) {
+            byte[] pdolValues = selectApp.generatePdolRequestData();
+            // Pdol TLV
+            pdolTlv = new byte[pdolValues.length + 2];
+            pdolTlv[0] = (byte) 0x83;
+            pdolTlv[1] = (byte)pdolValues.length;
+            System.arraycopy(pdolValues, 0, pdolTlv, 2, pdolValues.length);
+//            pdol = "83 " + NumUtil.toHexString(new byte[] {(byte)pdolValues.length}) + " "  + NumUtil.toHexString(pdolValues);
         }
-        byte[] recv = transceive("80 A8 00 00 02 " +  pdol + " 00");
+        // Lc-Data-Le
+        byte[] lcDataLe = new byte[pdolTlv.length+2];
+        lcDataLe[0] =(byte) ( pdolTlv.length);
+        lcDataLe[lcDataLe.length-1] = 0x00;
+        System.arraycopy(pdolTlv, 0, lcDataLe, 1, pdolTlv.length);
+
+        // Send: 80 A8 00 00       21 32 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 02 50 00 00 00 00 00 09 78 12 12 31 00 E4 EC 9E 52 00
+        //       80 A8 00 00       21 83 1F 80 00 00 00 00 00 00 10 00 00 00 00 00 00 08 26 00 00 00 00 00 09 78 03 04 16 54 00 00 00 00 00
+        //       80 A8 00 00 23 83 21 32 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 02 50 00 00 00 00 00 09 78 12 12 31 00 E4 EC 9E 52 00
+        //       80 A8 00 00 24 83 21 32 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 02 50 00 00 00 00 00 09 78 12 12 31 00 E4 EC 9E 52 00
+
+        byte[] recv = transceive("80 A8 00 00 " +  NumUtil.toHexString(lcDataLe));
+       // byte[] recv = transceive("80 A8 00 00 " + pdol + " 00");
+        //     byte[] recv = transceive("80 A8 00 00 21 83 " +  pdol+ " 00" );
         addText(NumUtil.toHexString(recv));
 
-        GetAFL afl =  ApplicationFileLocatorParser.parseAFL(recv);
+        GetAFL afl = ApplicationFileLocatorParser.parseAFL(recv);
         return afl;
         //
     }
 
-    public void getRecordInformation(GetAFL afl)  throws IOException  {
+    public void getRecordInformation(GetAFL afl) throws IOException {
         addTextSeparation();
         log("[Step 6] Send READ RECORD with 0 to find out where the record is");
         addText("[Step 6] Send READ RECORD with 0 to find out where the record is");
@@ -450,6 +430,13 @@ public class CreditCardInfosActivity extends Activity {
     protected byte[] transceive(byte[] bytes) throws IOException {
         log("Send: " + SharedUtils.byte2Hex(bytes));
         byte[] recv = tagcomm.transceive(bytes);
+
+        // Create CardResponse
+        //CardResponse res = new CardResponse();
+        //res.setData(Arrays.copyOfRange(recv, 0, recv.length - 2));
+        //StatusWord sw = new StatusWord(recv[recv.length - 2], recv[recv.length - 1]);
+        //res.setStatusWord(sw);
+
         // --> error list http://www.eftlab.co.uk/index.php/site-map/knowledge-base/118-apdu-response-list
         // Parse Error
         ArrayList<Err> errors = Errors.getError(recv);
