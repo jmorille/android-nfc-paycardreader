@@ -20,8 +20,6 @@ import com.jaccal.CardException;
 import com.jaccal.CardResponse;
 import com.jaccal.StatusWord;
 import com.jaccal.command.Command;
-import com.jaccal.command.emv.EMV4_1;
-import com.jaccal.command.iso.ISOSelect;
 import com.jaccal.util.NumUtil;
 
 import net.skora.eccardinfos.error.Err;
@@ -52,6 +50,8 @@ import eu.ttbox.io7816.PseDirectory;
  * http://www.nfc.cc/2012/04/02/android-app-reads-paypass-and-paywave-creditcards/
  * <p/>
  * http://www.acbm.com/inedits/cartes-bancaires-sans-contact.html
+ *
+ * JS: http://www.openscdp.org/scripts/tutorial/emv/index.html
  */
 public class CreditCardInfosActivity extends Activity {
     // Dialogs
@@ -113,7 +113,8 @@ public class CreditCardInfosActivity extends Activity {
     }
 
     private void addTextSeparation() {
-        addText("___________________________");
+       // log("---------------------------------------------------------------------");
+        addText("---------------------------------------------------------------------");
     }
 
 
@@ -140,15 +141,19 @@ public class CreditCardInfosActivity extends Activity {
         }
 
         try {
+            // Exemple : https://code.google.com/p/javaemvreader/wiki/ExampleOutput
+
+            //selectMasterFile( );
 
             PseDirectory pseDirectory = selectPseDirectory();
             log(pseDirectory.toString());
 
-//            Application app = readPseRecord(pseDirectory);
-//            SelectApplication selectApp = selectApplication(app);
-//
-//            GetAFL afl = getGetProcessingOptions(selectApp);
-//            getRecordInformation(afl);
+            Application app = readPseRecord(pseDirectory);
+            SelectApplication selectApp = selectApplication(app);
+
+            GetAFL afl = getGetProcessingOptions(selectApp);
+           // getRecordInformation(afl);
+
             //6F 1A = 26
             // 84 0E = 14
             //  31 50 41 59 2E 53 59 53 2E 44 44 46 30 31
@@ -166,21 +171,44 @@ public class CreditCardInfosActivity extends Activity {
         String fileName = "1ADDF010";
         return selectPseDirectory(fileName);
     }
+
     private PseDirectory selectPseDirectory() throws IOException {
-        String fileName = "1PAY.SYS.DDF01";
-       // String fileName = "2PAY.SYS.DDF01";
+        // http://dexterous-programmer.blogspot.fr/2012/04/emv-transaction-step-1-application.html
+        //In case the card is an NFC card then it will have PPSE (Paypass Payment System Environment) as
+         // "2PAY.SYS.DDF01" and not "1PAY.SYS.DDF01"
+      //  String fileName = "1PAY.SYS.DDF01";
+        String fileName = "2PAY.SYS.DDF01";
        // String fileName = "1ADDF010";
  // new ISOSelect(ISOSelect.SELECT_AID, EMV4_1.AID_1PAY_SYS_DDF01);
 
           return selectPseDirectory(fileName);
     }
+
+    private void selectMasterFile( ) throws IOException {
+        // [Step 1] Select 1PAY.SYS.DDF01 to get the PSE directory
+        addTextSeparation();
+        addText("[Step 0] SELECT FILE Master File (if available)");
+        addTextSeparation();
+
+        byte[] recv = transceive("00 A4 04 00");
+    }
+        /**
+         * http://www.openscdp.org/scripts/tutorial/emv/Application%20Selection.html
+         * @param fileName
+         * @return
+         * @throws IOException
+         */
     private PseDirectory selectPseDirectory(String fileName) throws IOException {
         // [Step 1] Select 1PAY.SYS.DDF01 to get the PSE directory
+        addTextSeparation();
         addText("[Step 1] Select " +fileName +  " to get the PSE directory");
-        byte[] fileNameAsBytes = AscciHelper.ascciStringToBytes(fileName);
+        addTextSeparation();
+
+        byte[] fileNameAsBytes = AscciHelper.toAsciiString2Bytes(fileName);
+      String fileNameSize =   NumUtil.toHexString( new byte[]{ (byte)fileNameAsBytes.length});
         String fileNameAsHex = NumUtil.toHexString(fileNameAsBytes);
 //        byte[] recv = transceive("00 A4 04 00 0E 31 50 41 59 2E 53 59 53 2E 44 44 46 30 31");
-        byte[] recv = transceive("00 A4 04 00 0E " + fileNameAsHex);
+        byte[] recv = transceive("00 A4 04 00 " +fileNameSize+  " " + fileNameAsHex + " 00");
 
         //addText("[Step 1] Select 2PAY.SYS.DDF01 to get the PSE directory");
         //log("[Step 1] Select 2PAY.SYS.DDF01 to get the PSE directory");
@@ -195,14 +223,14 @@ public class CreditCardInfosActivity extends Activity {
 
         // DF Name
         byte[] dfName = TLVParser.getTlvValue(parsedRecv, "84");
-        String dfNameString = AscciHelper.toAscciString(dfName);
+        String dfNameString = AscciHelper.toAsciiByte2String(dfName);
         log("DF Name : " + NumUtil.toHexString(dfName) + " ==> " + dfNameString);
         addText("DF Name", dfNameString);
 
 
         byte[] sfi = TLVParser.getTlvValue(parsedRecv, "88");
         byte[] lang = TLVParser.getTlvValue(parsedRecv, "5F2D");
-        String langValue = AscciHelper.toAscciString(lang);
+        String langValue = AscciHelper.toAsciiByte2String(lang);
         addText("Lang", langValue);
         addText("sfi", NumUtil.toHexString(sfi));
 
@@ -217,8 +245,12 @@ public class CreditCardInfosActivity extends Activity {
 
 
     public Application readPseRecord(PseDirectory pseDirectory) throws IOException {
-        log("[Step 2] Send READ RECORD with 0 to find out where the record is");
+        // TODO select in funtion of EMV_v4.3_Book_1_ICC_to_Terminal_Interface_2012060705394541.pdf page 129
+        // TODO http://dexterous-programmer.blogspot.fr/2012/04/emv-transaction-step-1-application.html
+        addTextSeparation();
         addText("[Step 2] Send READ RECORD with 0 to find out where the record is");
+        addTextSeparation();
+
         String sfi = NumUtil.hex2String((byte) ((pseDirectory.fsi << 3) | 4));
         String cmd = "00 B2 01 " + sfi + " 00";
         byte[] recv = transceive(cmd);
@@ -248,7 +280,7 @@ public class CreditCardInfosActivity extends Activity {
         int appLabelLenght = appIdLenght + appLabelSize + 2;
 
         byte[] appLabel = Arrays.copyOfRange(application, appIdLenght + 2, appLabelLenght);
-        String appLabelString = AscciHelper.toAscciString(appLabel);
+        String appLabelString = AscciHelper.toAsciiByte2String(appLabel);
         // addText("App Label", NumUtil.toHexString(appLabel));
         addText("App Label", appLabelString);
 
@@ -260,8 +292,9 @@ public class CreditCardInfosActivity extends Activity {
 
     public SelectApplication selectApplication(Application app) throws IOException {
         addTextSeparation();
-        log("[Step 4] Now that we know the AID, select the application");
         addText("[Step 4] Now that we know the AID, select the application");
+        addTextSeparation();
+
         byte[] recv = transceive("00 A4 04 00 07 " + NumUtil.toHexString(app.appid));
         addText(NumUtil.toHexString(recv));
 
@@ -272,7 +305,7 @@ public class CreditCardInfosActivity extends Activity {
         // -------------------
         // DF Name
         byte[] dfName = TLVParser.getTlvValue(parsedRecv, Emv41Enum.DF_FCI_NAME  );
-        String dfNameString = null;//AscciHelper.toAscciString(dfName);
+        String dfNameString = null;//AscciHelper.toAsciiByte2String(dfName);
         log("DF Name : " + NumUtil.toHexString(dfName) + " ==> " + dfNameString);
         //DF Name : A0 00 00 00 42 10 10 ==> null
         //addText("DF Name", dfNameString);
@@ -283,7 +316,7 @@ public class CreditCardInfosActivity extends Activity {
         byte[] appPriorityIndicator = TLVParser.getTlvValue(parsedRecv, Emv41Enum.DF_ADF_PRIORITY );
         byte[] lang = TLVParser.getTlvValue(parsedRecv, Emv41Enum.DF_FCI_LANG );
         byte[] appPrefName = TLVParser.getTlvValue(parsedRecv, Emv41Enum.DF_ADF_PREFERRED_NAME);
-        String appPrefNameString = AscciHelper.toAscciString(appPrefName);
+        String appPrefNameString = AscciHelper.toAsciiByte2String(appPrefName);
         addText("App Pref Name", appPrefNameString);
         byte[] iserDicretionnarayData = TLVParser.getTlvValue(parsedRecv, "BF0C");
 
@@ -299,11 +332,11 @@ public class CreditCardInfosActivity extends Activity {
     }
 
     public GetAFL getGetProcessingOptions(SelectApplication selectApp) throws IOException {
-        addTextSeparation();
         //http://stackoverflow.com/questions/15059580/reading-emv-card-using-ppse-and-not-pse
         // http://www.acbm.com/inedits/cartes-bancaires-sans-contact.html
-        log("[Step 5] Send GET PROCESSING OPTIONS command");
+        addTextSeparation();
         addText("[Step 5] Send GET PROCESSING OPTIONS command");
+        addTextSeparation();
 
         byte[] pdolTlv = new byte[] { (byte) 0x83  };
         if (selectApp != null && selectApp.pdol != null) {
@@ -326,6 +359,7 @@ public class CreditCardInfosActivity extends Activity {
         //       80 A8 00 00 23 83 21 32 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 02 50 00 00 00 00 00 09 78 12 12 31 00 E4 EC 9E 52 00
         //       80 A8 00 00 24 83 21 32 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 02 50 00 00 00 00 00 09 78 12 12 31 00 E4 EC 9E 52 00
 
+        //       80A800000483020804
         byte[] recv = transceive("80 A8 00 00 " +  NumUtil.toHexString(lcDataLe));
        // byte[] recv = transceive("80 A8 00 00 " + pdol + " 00");
         //     byte[] recv = transceive("80 A8 00 00 21 83 " +  pdol+ " 00" );
@@ -338,14 +372,15 @@ public class CreditCardInfosActivity extends Activity {
 
     public void getRecordInformation(GetAFL afl) throws IOException {
         addTextSeparation();
-        log("[Step 6] Send READ RECORD with 0 to find out where the record is");
         addText("[Step 6] Send READ RECORD with 0 to find out where the record is");
+        addTextSeparation();
 
         for (AflRecord record : afl.records) {
             int sfi = record.sfi;
             int begin = record.recordNumberBegin;
             byte[] cmd = Iso7816Commands.readRecord(begin, sfi);
             byte[] recv = transceive(cmd);
+            addText(NumUtil.toHexString(recv));
         }
 
     }
@@ -368,10 +403,10 @@ public class CreditCardInfosActivity extends Activity {
                 keyLabel = tag.toString();
                 valueLabel = Emv41TypeEnum.UNNKOWN.toString(tagValue);
             } else {
-                keyLabel = emv.name() + "(" +tag.toString() +  ")";
+                keyLabel = emv.name() + "(" + NumUtil.hex2String(tag.key) +  ")";
                 valueLabel= emv.toString(tagValue);
             }
-
+            log(keyLabel + " = " +  valueLabel);
             addText(keyLabel, valueLabel);
         }
     }
@@ -466,6 +501,9 @@ public class CreditCardInfosActivity extends Activity {
             }
         } else {
             log("Received: " + SharedUtils.byte2Hex(recv));
+        }
+        if (recv.length>2) {
+            log("Received: " + AscciHelper.toAsciiByte2String(TLVParser.getData(recv)));
         }
         return recv;
     }

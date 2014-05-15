@@ -85,7 +85,7 @@ public class TLVParserTest {
         byte[] valTow = TLVParser.getTlvValue(parseOne, "5F2D");
         Assert.assertTrue(valTow!=null);
         Assert.assertEquals(2 , valTow.length);
-        String text = AscciHelper.toAscciString(valTow);
+        String text = AscciHelper.toAsciiByte2String(valTow);
         Assert.assertEquals("en" , text);
 
 

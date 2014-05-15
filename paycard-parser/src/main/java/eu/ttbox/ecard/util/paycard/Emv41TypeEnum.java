@@ -11,7 +11,7 @@ public enum Emv41TypeEnum {
     TLV,
     STRING(new Emv41TypeToString() {
         public String toString( byte[] value) {
-            return AscciHelper.toAscciString(value);
+            return AscciHelper.toAsciiByte2String(value);
         }
     });
 

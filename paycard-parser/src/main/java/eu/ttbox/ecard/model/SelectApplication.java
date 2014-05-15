@@ -15,6 +15,19 @@ public class SelectApplication {
 
     public byte[] pdol = null;
 
+    /**
+     * 9F02 - 06 : amount authorized
+     * 9F03 - 06 : amount other
+     * 9F1A - 02 : terminal country code
+     * 95 - 05	 : terminal verification results
+     * 5F2A - 02 : transactin country code
+     * 9A - 03	 : transaction date
+     * 9C - 03	 : transaction Type
+     * 9F37 - 04 : unpredictable number
+     * 9F66 - 04 : Terminal Transaction Qualifiers
+     * 9F7A - 01 : VLP Terminal Support Indicator
+     * @return
+     */
     public byte[] generatePdolRequestData() {
         byte[] result = null;
         if (this.pdol != null) {
@@ -33,6 +46,7 @@ public class SelectApplication {
                 // http://www.eftlab.co.uk/index.php/site-map/knowledge-base/145-emv-nfc-tags
                 //  PDOL (4 + 6 + 6 + 2 + 5 + 2 + 3 + 1 + 4)
                 // 80 A8 00 00 23 83 ==> 21
+                //
                 if ("9F66".equals(key)) {
                     // 9F66	 Terminal transaction Qualifiers	 4 octets
                     // binary 32

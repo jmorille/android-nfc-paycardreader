@@ -3,6 +3,7 @@ package eu.ttbox.ecard.model;
 
 import com.jaccal.util.NumUtil;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class RecvTag {
@@ -11,6 +12,10 @@ public class RecvTag {
 
     public final int valueSize;
 
+    public RecvTag parentKey;
+    public ArrayList<RecvTag> childKeys = new ArrayList<RecvTag>();
+
+    // Accessor
     public RecvTag(String key) {
         this( NumUtil.toStringHex(key));
     }
