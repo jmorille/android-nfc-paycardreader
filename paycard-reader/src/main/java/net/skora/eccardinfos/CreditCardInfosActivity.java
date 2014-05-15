@@ -144,11 +144,11 @@ public class CreditCardInfosActivity extends Activity {
             PseDirectory pseDirectory = selectPseDirectory();
             log(pseDirectory.toString());
 
-            Application app = readPseRecord(pseDirectory);
-            SelectApplication selectApp = selectApplication(app);
-
-            GetAFL afl = getGetProcessingOptions(selectApp);
-            getRecordInformation(afl);
+//            Application app = readPseRecord(pseDirectory);
+//            SelectApplication selectApp = selectApplication(app);
+//
+//            GetAFL afl = getGetProcessingOptions(selectApp);
+//            getRecordInformation(afl);
             //6F 1A = 26
             // 84 0E = 14
             //  31 50 41 59 2E 53 59 53 2E 44 44 46 30 31
@@ -161,11 +161,15 @@ public class CreditCardInfosActivity extends Activity {
             toastError(getResources().getText(R.string.error_nfc_comm_cont) + (e.getMessage() != null ? e.getMessage() : "-"));
         }
     }
-
+    private PseDirectory selectPseDirectoryNavigo() throws IOException {
+        // https://github.com/pterjan/cardpeek-navigo/tree/master/dot_cardpeek_dir/scripts
+        String fileName = "1ADDF010";
+        return selectPseDirectory(fileName);
+    }
     private PseDirectory selectPseDirectory() throws IOException {
         String fileName = "1PAY.SYS.DDF01";
        // String fileName = "2PAY.SYS.DDF01";
-
+       // String fileName = "1ADDF010";
  // new ISOSelect(ISOSelect.SELECT_AID, EMV4_1.AID_1PAY_SYS_DDF01);
 
           return selectPseDirectory(fileName);
