@@ -22,65 +22,66 @@ import java.io.IOException;
 
 /**
  * The status word in the card response
+ *
  * @author Chang Sau Sheong
  * @see CardResponse
  */
 public class StatusWord {
 
-  private byte sw1;
-  private byte sw2;
+    private byte sw1;
+    private byte sw2;
 
-  public StatusWord(byte sw1, byte sw2) {
-    this.sw1 = sw1;
-    this.sw2 = sw2;
-  }
-
-  public byte getSw1() {
-    return sw1;
-  }
-
-  public void setSw1(byte sw1) {
-    this.sw1 = sw1;
-  }
-
-  public byte getSw2() {
-    return sw2;
-  }
-
-  public void setSw2(byte sw2) {
-    this.sw2 = sw2;
-  }
-
-  public final byte[] getBytes() throws IOException {
-    byte[] byteArray;
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-
-    baos.write(getSw1());
-    baos.write(getSw2());
-
-    byteArray = baos.toByteArray();
-    baos.close();
-
-    return byteArray;
-  }
-
-  public boolean isSuccess() {
-    if (sw1 == (byte)0x90 && sw2 == (byte)0x00) {
-      return true;
+    public StatusWord(byte sw1, byte sw2) {
+        this.sw1 = sw1;
+        this.sw2 = sw2;
     }
-    return false;
 
-  }
+    public byte getSw1() {
+        return sw1;
+    }
 
-  public String toString(){
-  	String str = null;
-  	
-  	try {
-		str = NumUtil.toHexString(getBytes());
-	} catch (IOException e) {
-		e.printStackTrace();
-	}
-	return str;
-  }
+    public void setSw1(byte sw1) {
+        this.sw1 = sw1;
+    }
+
+    public byte getSw2() {
+        return sw2;
+    }
+
+    public void setSw2(byte sw2) {
+        this.sw2 = sw2;
+    }
+
+    public final byte[] getBytes() throws IOException {
+        byte[] byteArray;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+
+        baos.write(getSw1());
+        baos.write(getSw2());
+
+        byteArray = baos.toByteArray();
+        baos.close();
+
+        return byteArray;
+    }
+
+    public boolean isSuccess() {
+        if (sw1 == (byte) 0x90 && sw2 == (byte) 0x00) {
+            return true;
+        }
+        return false;
+
+    }
+
+    public String toString() {
+        String str = null;
+
+        try {
+            str = NumUtil.toHexString(getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return str;
+    }
 }

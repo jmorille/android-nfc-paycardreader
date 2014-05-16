@@ -28,72 +28,79 @@ import java.io.IOException;
  */
 public class CardResponse {
 
-  private byte[] data;
-  public StatusWord statusWord;
+    private byte[] data;
+    public StatusWord statusWord;
 
-  public byte[] getData() {
-    return data;
-  }
-
-  public void setData(byte[] data) {
-    this.data = data;
-  }
-
-  public StatusWord getStatusWord() {
-    return statusWord;
-  }
-
-  public void setStatusWord(StatusWord statusWord) {
-    this.statusWord = statusWord;
-  }
-
-  public final byte[] getBytes() throws IOException {
-    byte[] byteArray;
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-
-    if (data != null) {
-      baos.write(data);
+    public byte[] getData() {
+        return data;
     }
-    baos.write(statusWord.getSw1());
-    baos.write(statusWord.getSw2());
 
-    byteArray = baos.toByteArray();
-    baos.close();
-
-    return byteArray;
-  }
-
-  public final byte[] getRespBytes() throws IOException {
-    byte[] byteArray;
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-
-    if (data != null) {
-      baos.write(data);
+    public void setData(byte[] data) {
+        this.data = data;
     }
-    
-    byteArray = baos.toByteArray();
-    baos.close();
 
-    return byteArray;
-  }
-  
-  public String toString() {
-    String ret = null;
-    
-    try {
-    	if(data.length != 0){
-    	      ret = "[R] " + NumUtil.toHexString(getRespBytes()) + "\n[SW] " + NumUtil.toHexString(statusWord.getBytes()) + "\n";   		
-    	}
-    	else{
-    	      ret = "[SW] " + NumUtil.toHexString(statusWord.getBytes()) + "\n";    		
-    	}
+    public StatusWord getStatusWord() {
+        return statusWord;
     }
-    catch (IOException e) {
-      e.printStackTrace();
+
+    public void setStatusWord(StatusWord statusWord) {
+        this.statusWord = statusWord;
     }
-    return ret;
-  }
+
+
+    public boolean isSuccess() {
+        if (statusWord != null) {
+            return statusWord.isSuccess();
+        }
+        return false;
+
+    }
+
+    public final byte[] getBytes() throws IOException {
+        byte[] byteArray;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+
+        if (data != null) {
+            baos.write(data);
+        }
+        baos.write(statusWord.getSw1());
+        baos.write(statusWord.getSw2());
+
+        byteArray = baos.toByteArray();
+        baos.close();
+
+        return byteArray;
+    }
+
+    public final byte[] getRespBytes() throws IOException {
+        byte[] byteArray;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+
+        if (data != null) {
+            baos.write(data);
+        }
+
+        byteArray = baos.toByteArray();
+        baos.close();
+
+        return byteArray;
+    }
+
+    public String toString() {
+        String ret = null;
+
+        try {
+            if (data.length != 0) {
+                ret = "[R] " + NumUtil.toHexString(getRespBytes()) + "\n[SW] " + NumUtil.toHexString(statusWord.getBytes()) + "\n";
+            } else {
+                ret = "[SW] " + NumUtil.toHexString(statusWord.getBytes()) + "\n";
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return ret;
+    }
 
 }

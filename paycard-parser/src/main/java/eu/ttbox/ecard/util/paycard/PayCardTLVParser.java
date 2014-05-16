@@ -1,5 +1,7 @@
 package eu.ttbox.ecard.util.paycard;
 
+import com.jaccal.CardResponse;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -7,6 +9,12 @@ import eu.ttbox.ecard.model.RecvTag;
 import eu.ttbox.ecard.util.TLVParser;
 
 public class PayCardTLVParser {
+
+
+    public static HashMap<RecvTag, byte[]> parsePayCardTVLInDept(CardResponse card) {
+        byte[] tlv = card.getData();
+        return parsePayCardTVLInDept(tlv,null,   null);
+    }
 
     public static HashMap<RecvTag, byte[]> parsePayCardTVLInDept(byte[] tlv) {
         return parsePayCardTVLInDept(tlv,null,   null);
@@ -30,7 +38,7 @@ public class PayCardTLVParser {
                 switch (emv.type) {
                     case TLV: {
                         HashMap<RecvTag, byte[]> sub = parsePayCardTVLInDept(value, key, result);
-                        key.childKeys.addAll(sub.keySet());
+                        key.addAllChildKey(sub.keySet());
                         result.putAll(sub);
                     }
                     break;

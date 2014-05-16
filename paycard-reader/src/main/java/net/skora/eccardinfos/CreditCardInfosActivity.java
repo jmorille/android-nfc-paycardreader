@@ -50,7 +50,7 @@ import eu.ttbox.io7816.PseDirectory;
  * http://www.nfc.cc/2012/04/02/android-app-reads-paypass-and-paywave-creditcards/
  * <p/>
  * http://www.acbm.com/inedits/cartes-bancaires-sans-contact.html
- *
+ * <p/>
  * JS: http://www.openscdp.org/scripts/tutorial/emv/index.html
  */
 public class CreditCardInfosActivity extends Activity {
@@ -113,7 +113,7 @@ public class CreditCardInfosActivity extends Activity {
     }
 
     private void addTextSeparation() {
-       // log("---------------------------------------------------------------------");
+        // log("---------------------------------------------------------------------");
         addText("---------------------------------------------------------------------");
     }
 
@@ -147,12 +147,15 @@ public class CreditCardInfosActivity extends Activity {
 
             PseDirectory pseDirectory = selectPseDirectory();
             log(pseDirectory.toString());
-
+            // SFI data
             Application app = readPseRecord(pseDirectory);
-            SelectApplication selectApp = selectApplication(app);
+            // Aid  Record
+            readAllAidRecord(pseDirectory);
 
-            GetAFL afl = getGetProcessingOptions(selectApp);
-           // getRecordInformation(afl);
+//            SelectApplication selectApp = selectApplication(app);
+
+//            GetAFL afl = getGetProcessingOptions(selectApp);
+            // getRecordInformation(afl);
 
             //6F 1A = 26
             // 84 0E = 14
@@ -166,6 +169,7 @@ public class CreditCardInfosActivity extends Activity {
             toastError(getResources().getText(R.string.error_nfc_comm_cont) + (e.getMessage() != null ? e.getMessage() : "-"));
         }
     }
+
     private PseDirectory selectPseDirectoryNavigo() throws IOException {
         // https://github.com/pterjan/cardpeek-navigo/tree/master/dot_cardpeek_dir/scripts
         String fileName = "1ADDF010";
@@ -175,40 +179,50 @@ public class CreditCardInfosActivity extends Activity {
     private PseDirectory selectPseDirectory() throws IOException {
         // http://dexterous-programmer.blogspot.fr/2012/04/emv-transaction-step-1-application.html
         //In case the card is an NFC card then it will have PPSE (Paypass Payment System Environment) as
-         // "2PAY.SYS.DDF01" and not "1PAY.SYS.DDF01"
-      //  String fileName = "1PAY.SYS.DDF01";
+        // "2PAY.SYS.DDF01" and not "1PAY.SYS.DDF01"
+        //  String fileName = "1PAY.SYS.DDF01";
         String fileName = "2PAY.SYS.DDF01";
-       // String fileName = "1ADDF010";
- // new ISOSelect(ISOSelect.SELECT_AID, EMV4_1.AID_1PAY_SYS_DDF01);
+        // String fileName = "1ADDF010";
+        // new ISOSelect(ISOSelect.SELECT_AID, EMV4_1.AID_1PAY_SYS_DDF01);
 
-          return selectPseDirectory(fileName);
+        return selectPseDirectory(fileName);
     }
 
-    private void selectMasterFile( ) throws IOException {
+    private void selectMasterFile() throws IOException {
         // [Step 1] Select 1PAY.SYS.DDF01 to get the PSE directory
         addTextSeparation();
         addText("[Step 0] SELECT FILE Master File (if available)");
         addTextSeparation();
 
-        byte[] recv = transceive("00 A4 04 00");
+
+        CardResponse fcp = transceive( "00 A4 04 00");
+        byte[] recv = fcp.getData();
+        StatusWord sw = fcp.getStatusWord();
+
+
     }
-        /**
-         * http://www.openscdp.org/scripts/tutorial/emv/Application%20Selection.html
-         * @param fileName
-         * @return
-         * @throws IOException
-         */
+
+    /**
+     * http://www.openscdp.org/scripts/tutorial/emv/Application%20Selection.html
+     *
+     * @param fileName
+     * @return
+     * @throws IOException
+     */
     private PseDirectory selectPseDirectory(String fileName) throws IOException {
         // [Step 1] Select 1PAY.SYS.DDF01 to get the PSE directory
         addTextSeparation();
-        addText("[Step 1] Select " +fileName +  " to get the PSE directory");
+        addText("[Step 1] Select " + fileName + " to get the PSE directory");
         addTextSeparation();
 
         byte[] fileNameAsBytes = AscciHelper.toAsciiString2Bytes(fileName);
-      String fileNameSize =   NumUtil.toHexString( new byte[]{ (byte)fileNameAsBytes.length});
+        String fileNameSize = NumUtil.toHexString(new byte[]{(byte) fileNameAsBytes.length});
         String fileNameAsHex = NumUtil.toHexString(fileNameAsBytes);
 //        byte[] recv = transceive("00 A4 04 00 0E 31 50 41 59 2E 53 59 53 2E 44 44 46 30 31");
-        byte[] recv = transceive("00 A4 04 00 " +fileNameSize+  " " + fileNameAsHex + " 00");
+        String cmd = "00 A4 04 00 " + fileNameSize + " " + fileNameAsHex + " 00";
+
+        CardResponse card = transceive(cmd);
+        byte[] recv = card.getData();
 
         //addText("[Step 1] Select 2PAY.SYS.DDF01 to get the PSE directory");
         //log("[Step 1] Select 2PAY.SYS.DDF01 to get the PSE directory");
@@ -234,13 +248,54 @@ public class CreditCardInfosActivity extends Activity {
         addText("Lang", langValue);
         addText("sfi", NumUtil.toHexString(sfi));
 
-        PseDirectory result = new PseDirectory();
+        PseDirectory result = new PseDirectory(parsedRecv);
         result.lang = langValue;
         result.dfName = dfNameString;
         result.fsi = sfi[0];
 
         log("[Step 1] END");
         return result;
+    }
+
+    /**
+     * http://dexterous-programmer.blogspot.fr/2012/04/emv-transaction-step-1-application.html
+     */
+    public void readAllAidRecord(PseDirectory pseDirectory) throws IOException {
+        byte[] aid = pseDirectory.getAid();
+        if (aid != null) {
+            String aidSize = NumUtil.toHexString(new byte[]{(byte) aid.length});
+            String aidAsHex = NumUtil.toHexString(aid);
+
+            addTextSeparation();
+            addText("[Step 1] Select Aid " + aidAsHex  );
+            addTextSeparation();
+
+            String cmd = "00 A4 04 00 " + aidSize + " " + aidAsHex + " 00";
+            CardResponse card = transceive(cmd);
+
+            HashMap<RecvTag, byte[]> aidResponse =  PayCardTLVParser.parsePayCardTVLInDept(card);
+            log(aidResponse);
+
+            if (card.isSuccess()) {
+                addTextSeparation();
+                addText("[Step 1] Read All Aid Record of Aid " + aidAsHex  );
+                addTextSeparation();
+
+                for (int sfi = 1; sfi <= 31; sfi++) {
+                    for (int rec = 1; rec <= 16; rec++) {
+                        byte[] readCmd = new byte[] {0x00, (byte)0xB2, (byte)rec, (byte)((sfi << 3) | 4), 0x00 };
+                        CardResponse tlv = transceive(readCmd);
+                        if (tlv.isSuccess()) {
+                           addText("SFI " + sfi  + " record #" + rec);
+                           byte[] tlvData =  tlv.getData();
+                           HashMap<RecvTag, byte[]> record =  PayCardTLVParser.parsePayCardTVLInDept(tlvData);
+                           log(record);
+                        }
+                    }
+                }
+            }
+        }
+
     }
 
 
@@ -253,7 +308,9 @@ public class CreditCardInfosActivity extends Activity {
 
         String sfi = NumUtil.hex2String((byte) ((pseDirectory.fsi << 3) | 4));
         String cmd = "00 B2 01 " + sfi + " 00";
-        byte[] recv = transceive(cmd);
+        CardResponse card = transceive(cmd);
+        byte[] recv = card.getData();
+
         addText(NumUtil.toHexString(recv));
 
         // Parse Read Pse Record
@@ -295,7 +352,8 @@ public class CreditCardInfosActivity extends Activity {
         addText("[Step 4] Now that we know the AID, select the application");
         addTextSeparation();
 
-        byte[] recv = transceive("00 A4 04 00 07 " + NumUtil.toHexString(app.appid));
+        CardResponse card = transceive("00 A4 04 00 07 " + NumUtil.toHexString(app.appid));
+        byte[] recv = card.getData();
         addText(NumUtil.toHexString(recv));
 
         HashMap<RecvTag, byte[]> parsedRecv = PayCardTLVParser.parsePayCardTVLInDept(recv);
@@ -304,7 +362,7 @@ public class CreditCardInfosActivity extends Activity {
         // Parse FCI Template
         // -------------------
         // DF Name
-        byte[] dfName = TLVParser.getTlvValue(parsedRecv, Emv41Enum.DF_FCI_NAME  );
+        byte[] dfName = TLVParser.getTlvValue(parsedRecv, Emv41Enum.DF_FCI_NAME);
         String dfNameString = null;//AscciHelper.toAsciiByte2String(dfName);
         log("DF Name : " + NumUtil.toHexString(dfName) + " ==> " + dfNameString);
         //DF Name : A0 00 00 00 42 10 10 ==> null
@@ -312,9 +370,9 @@ public class CreditCardInfosActivity extends Activity {
 
         // Parse FCI Proprietary
         // -------------------
-        byte[] appLabel = TLVParser.getTlvValue(parsedRecv, Emv41Enum.DF_ADF_LABEL  );
-        byte[] appPriorityIndicator = TLVParser.getTlvValue(parsedRecv, Emv41Enum.DF_ADF_PRIORITY );
-        byte[] lang = TLVParser.getTlvValue(parsedRecv, Emv41Enum.DF_FCI_LANG );
+        byte[] appLabel = TLVParser.getTlvValue(parsedRecv, Emv41Enum.DF_ADF_LABEL);
+        byte[] appPriorityIndicator = TLVParser.getTlvValue(parsedRecv, Emv41Enum.DF_ADF_PRIORITY);
+        byte[] lang = TLVParser.getTlvValue(parsedRecv, Emv41Enum.DF_FCI_LANG);
         byte[] appPrefName = TLVParser.getTlvValue(parsedRecv, Emv41Enum.DF_ADF_PREFERRED_NAME);
         String appPrefNameString = AscciHelper.toAsciiByte2String(appPrefName);
         addText("App Pref Name", appPrefNameString);
@@ -322,7 +380,7 @@ public class CreditCardInfosActivity extends Activity {
 
         // Parse PDOL
         // -------------------
-        byte[] pdol = TLVParser.getTlvValue(parsedRecv, Emv41Enum.PDOL  );
+        byte[] pdol = TLVParser.getTlvValue(parsedRecv, Emv41Enum.PDOL);
         log("PDOL : " + NumUtil.toHexString(pdol));
         addText("PDOL", NumUtil.toHexString(pdol));
 
@@ -338,30 +396,27 @@ public class CreditCardInfosActivity extends Activity {
         addText("[Step 5] Send GET PROCESSING OPTIONS command");
         addTextSeparation();
 
-        byte[] pdolTlv = new byte[] { (byte) 0x83  };
+        byte[] pdolTlv = new byte[]{(byte) 0x83};
         if (selectApp != null && selectApp.pdol != null) {
             byte[] pdolValues = selectApp.generatePdolRequestData();
             // Pdol TLV
             pdolTlv = new byte[pdolValues.length + 2];
             pdolTlv[0] = (byte) 0x83;
-            pdolTlv[1] = (byte)pdolValues.length;
+            pdolTlv[1] = (byte) pdolValues.length;
             System.arraycopy(pdolValues, 0, pdolTlv, 2, pdolValues.length);
 //            pdol = "83 " + NumUtil.toHexString(new byte[] {(byte)pdolValues.length}) + " "  + NumUtil.toHexString(pdolValues);
         }
         // Lc-Data-Le
-        byte[] lcDataLe = new byte[pdolTlv.length+2];
-        lcDataLe[0] =(byte) ( pdolTlv.length);
-        lcDataLe[lcDataLe.length-1] = 0x00;
+        byte[] lcDataLe = new byte[pdolTlv.length + 2];
+        lcDataLe[0] = (byte) (pdolTlv.length);
+        lcDataLe[lcDataLe.length - 1] = 0x00;
         System.arraycopy(pdolTlv, 0, lcDataLe, 1, pdolTlv.length);
 
-        // Send: 80 A8 00 00       21 32 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 02 50 00 00 00 00 00 09 78 12 12 31 00 E4 EC 9E 52 00
-        //       80 A8 00 00       21 83 1F 80 00 00 00 00 00 00 10 00 00 00 00 00 00 08 26 00 00 00 00 00 09 78 03 04 16 54 00 00 00 00 00
-        //       80 A8 00 00 23 83 21 32 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 02 50 00 00 00 00 00 09 78 12 12 31 00 E4 EC 9E 52 00
-        //       80 A8 00 00 24 83 21 32 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 02 50 00 00 00 00 00 09 78 12 12 31 00 E4 EC 9E 52 00
 
         //       80A800000483020804
-        byte[] recv = transceive("80 A8 00 00 " +  NumUtil.toHexString(lcDataLe));
-       // byte[] recv = transceive("80 A8 00 00 " + pdol + " 00");
+        CardResponse card = transceive("80 A8 00 00 " + NumUtil.toHexString(lcDataLe));
+        byte[] recv = card.getData();
+        // byte[] recv = transceive("80 A8 00 00 " + pdol + " 00");
         //     byte[] recv = transceive("80 A8 00 00 21 83 " +  pdol+ " 00" );
         addText(NumUtil.toHexString(recv));
 
@@ -379,7 +434,8 @@ public class CreditCardInfosActivity extends Activity {
             int sfi = record.sfi;
             int begin = record.recordNumberBegin;
             byte[] cmd = Iso7816Commands.readRecord(begin, sfi);
-            byte[] recv = transceive(cmd);
+            CardResponse card = transceive(cmd);
+            byte[] recv = card.getData();
             addText(NumUtil.toHexString(recv));
         }
 
@@ -396,17 +452,17 @@ public class CreditCardInfosActivity extends Activity {
             RecvTag tag = entry.getKey();
             byte[] tagValue = entry.getValue();
             // Search Label
-            Emv41Enum emv =  Emv41Enum.getByTag(tag);
-            String keyLabel ;
-            String valueLabel ;
-            if (emv==null) {
+            Emv41Enum emv = Emv41Enum.getByTag(tag);
+            String keyLabel;
+            String valueLabel;
+            if (emv == null) {
                 keyLabel = tag.toString();
                 valueLabel = Emv41TypeEnum.UNNKOWN.toString(tagValue);
             } else {
-                keyLabel = emv.name() + "(" + NumUtil.hex2String(tag.key) +  ")";
-                valueLabel= emv.toString(tagValue);
+                keyLabel = emv.name() + "(" + NumUtil.hex2String(tag.key) + ")";
+                valueLabel = emv.toString(tagValue);
             }
-            log(keyLabel + " = " +  valueLabel);
+            log(keyLabel + " = " + valueLabel);
             addText(keyLabel, valueLabel);
         }
     }
@@ -416,7 +472,8 @@ public class CreditCardInfosActivity extends Activity {
         log("Select Master File ");
         try {
             byte[] cmd = Iso7816Commands.selectMasterFileByIdentifier();
-            byte[] recv = transceive(cmd);
+            CardResponse card = transceive(cmd);
+            byte[] recv = card.getData();
         } catch (IOException e) {
             Log.e(LOGTAG, "Error transmiting : " + e.getMessage());
         }
@@ -438,7 +495,8 @@ public class CreditCardInfosActivity extends Activity {
                 //  for (int sfi = 0; sfi<=30; sfi++) {
                 //  int sfi = 1;
                 byte[] cmd = Iso7816Commands.readRecord(i, sfi);
-                byte[] recv = transceive(cmd);
+                CardResponse card = transceive(cmd);
+                byte[] recv = card.getData();
                 if (recv.length > 2) {
                     responses.add("--- record=" + i + "/ sfi=" + sfi + " : " + SharedUtils.byte2Hex(cmd)
                             + " ==> (" + recv.length + ")" + SharedUtils.byte2Hex(recv) //
@@ -473,7 +531,7 @@ public class CreditCardInfosActivity extends Activity {
         return res;
     }
 
-    protected byte[] transceive(String hexstr) throws IOException {
+    protected CardResponse transceive(String hexstr) throws IOException {
         String[] hexbytes = hexstr.split("\\s");
         byte[] bytes = new byte[hexbytes.length];
         for (int i = 0; i < hexbytes.length; i++) {
@@ -482,15 +540,15 @@ public class CreditCardInfosActivity extends Activity {
         return transceive(bytes);
     }
 
-    protected byte[] transceive(byte[] bytes) throws IOException {
+    protected CardResponse transceive(byte[] bytes) throws IOException {
         log("Send: " + SharedUtils.byte2Hex(bytes));
         byte[] recv = tagcomm.transceive(bytes);
 
         // Create CardResponse
-        //CardResponse res = new CardResponse();
-        //res.setData(Arrays.copyOfRange(recv, 0, recv.length - 2));
-        //StatusWord sw = new StatusWord(recv[recv.length - 2], recv[recv.length - 1]);
-        //res.setStatusWord(sw);
+        CardResponse res = new CardResponse();
+        StatusWord sw = new StatusWord(recv[recv.length - 2], recv[recv.length - 1]);
+        res.setData(Arrays.copyOfRange(recv, 0, recv.length - 2));
+        res.setStatusWord(sw);
 
         // --> error list http://www.eftlab.co.uk/index.php/site-map/knowledge-base/118-apdu-response-list
         // Parse Error
@@ -502,7 +560,7 @@ public class CreditCardInfosActivity extends Activity {
         } else {
             log("Received: " + SharedUtils.byte2Hex(recv));
         }
-        if (recv.length>2) {
+        if (recv.length > 2) {
             log("Received: " + AscciHelper.toAsciiByte2String(TLVParser.getData(recv)));
         }
         return recv;

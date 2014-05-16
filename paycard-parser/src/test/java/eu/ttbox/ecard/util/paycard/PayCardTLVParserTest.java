@@ -14,6 +14,13 @@ import eu.ttbox.ecard.util.ByteHelper;
 import eu.ttbox.ecard.util.TLVParser;
 
 public class PayCardTLVParserTest {
+
+
+    // ===========================================================
+    // 2PAY.SYS.DDF01 // ADF
+    // ===========================================================
+
+
     @Test
     public void parseSelectPseDirectory2Pay() {
         byte[] recv = ByteHelper.hex2Byte("6F 57 84 0E 32 50 41 59 2E 53 59 53 2E 44 44 46 30 31 A5 45 BF 0C 42 61 1B 4F 07 A0 00 00 00 42 10 10 87 01 01 50 02 43 42 9F 2A 08 03 00 00 00 00 00 00 00 61 23 4F 07 A0 00 00 00 03 10 10 87 01 02 50 0A 56 49 53 41 20 44 45 42 49 54 9F 2A 08 03 00 00 00 00 00 00 00");
@@ -23,11 +30,15 @@ public class PayCardTLVParserTest {
         print("2PAY.SYS.DDF01", parsedRecv);
         Assert.assertTrue(parsedRecv.containsKey(Emv41Enum.DF_FCI_NAME.tag));
         Assert.assertTrue(parsedRecv.containsKey(Emv41Enum.DF_ADF_PRIORITY.tag));
-        Assert.assertTrue(parsedRecv.containsKey(Emv41Enum.DF_ADF_NAME.tag));
+        Assert.assertTrue(parsedRecv.containsKey(Emv41Enum.DF_ADF_NAME.tag)); // =AID = RID + PIX
         Assert.assertTrue(parsedRecv.containsKey(Emv41Enum.DF_ADF_LABEL.tag));
 
         Assert.assertTrue(parsedRecv.containsKey(Emv41Enum.KERNEL_IDENTIFIER.tag));
     }
+
+    // ===========================================================
+    // 1PAY.SYS.DDF01 //PSE  == >'6A82' (‘File not found’)
+    // ===========================================================
 
 
     @Test
@@ -43,6 +54,9 @@ public class PayCardTLVParserTest {
         Assert.assertTrue(parsedRecv.containsKey(Emv41Enum.DF_FCI_LANG.tag));
 
     }
+    // ===========================================================
+    //Other
+    // ===========================================================
 
 
    //  @Test

@@ -5,6 +5,7 @@ import com.jaccal.util.NumUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 
 public class RecvTag {
 
@@ -13,9 +14,15 @@ public class RecvTag {
     public final int valueSize;
 
     public RecvTag parentKey;
-    public ArrayList<RecvTag> childKeys = new ArrayList<RecvTag>();
+    private ArrayList<RecvTag> childKeys;
 
-    // Accessor
+
+
+    // ===========================================================
+    // Constructor
+    // ===========================================================
+
+
     public RecvTag(String key) {
         this( NumUtil.toStringHex(key));
     }
@@ -27,6 +34,38 @@ public class RecvTag {
     public RecvTag(byte[] key, int valueSize) {
         this.key = key;
         this.valueSize = valueSize;
+    }
+
+    // ===========================================================
+    // Accessor
+    // ===========================================================
+
+
+    public ArrayList<RecvTag> getChildKeys() {
+        return childKeys;
+    }
+
+    private  ArrayList<RecvTag> createChildKeys() {
+        if (this.childKeys == null) {
+            this.childKeys = new ArrayList<RecvTag>();
+        }
+        return this.childKeys;
+    }
+
+    public void addChildKey( RecvTag  childKey ) {
+        if (this.childKeys == null) {
+          createChildKeys();
+        }
+        this.childKeys.add(childKey);
+    }
+
+    public void addAllChildKey( Collection< RecvTag> toAddChilds ) {
+        if (childKeys!=null) {
+            if (this.childKeys == null) {
+                 createChildKeys();
+            }
+            this.childKeys.addAll(toAddChilds);
+        }
     }
 
     public byte[] getValueSizeAsBytes(){
