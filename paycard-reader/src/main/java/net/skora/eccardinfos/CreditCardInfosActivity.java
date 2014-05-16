@@ -273,7 +273,8 @@ public class CreditCardInfosActivity extends Activity {
             String cmd = "00 A4 04 00 " + aidSize + " " + aidAsHex + " 00";
             CardResponse card = transceive(cmd);
 
-            HashMap<RecvTag, byte[]> aidResponse =  PayCardTLVParser.parsePayCardTVLInDept(card);
+            // TODO PayCardTLVParser
+            PayCardTLVParser aidResponse =  new PayCardTLVParser(card);
             log(aidResponse);
 
             if (card.isSuccess()) {
@@ -441,6 +442,11 @@ public class CreditCardInfosActivity extends Activity {
 
     }
 
+
+    private void log(PayCardTLVParser parsed) {
+        log(parsed.getParsed());
+    }
+
     private void log(HashMap<RecvTag, byte[]> parsed) {
         for (Map.Entry<RecvTag, byte[]> entry : parsed.entrySet()) {
             log("" + NumUtil.hex2String(entry.getKey().key) + " = " + NumUtil.toHexString(entry.getValue()));
@@ -515,16 +521,9 @@ public class CreditCardInfosActivity extends Activity {
     }
 
     public CardResponse execute(Command command) throws CardException {
-        CardResponse res = new CardResponse();
+        CardResponse res = null;
         try {
-            byte[] resp = transceive(command.getBytes());
-            byte[] data = new byte[resp.length - 2];
-            for (int i = 0; i < data.length; i++) {
-                data[i] = resp[i];
-            }
-            res.setData(data);
-            StatusWord sw = new StatusWord(resp[resp.length - 2], resp[resp.length - 1]);
-            res.setStatusWord(sw);
+              res = transceive(command.getBytes());
         } catch (IOException e) {
             throw new CardException(e);
         }
@@ -563,7 +562,7 @@ public class CreditCardInfosActivity extends Activity {
         if (recv.length > 2) {
             log("Received: " + AscciHelper.toAsciiByte2String(TLVParser.getData(recv)));
         }
-        return recv;
+        return res;
     }
 
     protected Dialog onCreateDialog(int id) {
@@ -598,7 +597,8 @@ public class CreditCardInfosActivity extends Activity {
             try {
                 // Read all EF_BLOG records
                 for (int i = 1; i <= 15; i++) {
-                    byte[] recv = transceive(String.format("00 B2 %02x EC 00", i));
+                    CardResponse  res = transceive(String.format("00 B2 %02x EC 00", i));
+                    byte[] recv = res.getBytes();
                     intent.putExtra(String.format("blog_%d", i), recv);
                 }
                 startActivity(intent);
